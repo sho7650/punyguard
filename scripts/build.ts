@@ -62,7 +62,8 @@ function watchStaticFile(file: StaticFile, onChange: () => void): void {
   }
   const name = path.basename(file.from);
   watch(path.dirname(file.from), (_event, filename) => {
-    if (filename === name) {
+    // fs.watch may leave out the file name; copying again is harmless, so treat it as a match.
+    if (filename === null || filename === name) {
       onChange();
     }
   });
