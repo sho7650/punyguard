@@ -122,25 +122,31 @@ e2e/                     Playwright
 
 ## Phase 0: プロジェクト生成
 
-- [ ] `copier copy gh:sho7650/copier-ts7 .` で生成する（project_name: `punyguard`）。既存の `CONTEXT.md`、`docs/`、`tasks/` が上書きされないことを確認する
-- [ ] `direnv allow` → `pnpm install` → `pnpm run check` が通ることを確認する
-- [ ] `git init`。最初のコミットは `chore: initial commit from copier-ts7`
-- [ ] （作者が確認してから）GitHub に `punyguard` リポジトリを作って push する。Actions の権限設定は Phase 5 で行う
+- [x] `copier copy gh:sho7650/copier-ts7 .` で生成する（project_name: `punyguard`）。既存の `CONTEXT.md`、`docs/`、`tasks/` が上書きされないことを確認する
+- [x] `direnv allow` → `pnpm install` → `pnpm run check` が通ることを確認する
+- [x] `git init`。最初のコミットは `chore: initial commit from copier-ts7`
+- [x] （作者が確認してから）GitHub に `punyguard` リポジトリを作って push する。Actions の権限設定は Phase 5 で行う
 
 ## Phase 1: 拡張機能向けにツールチェーンを変える
 
-- [ ] devDependencies に `esbuild`、`@types/chrome` を、dependencies に `punycode` を追加する
-- [ ] `import { toUnicode } from "punycode/"` が strict の型検査を通ることを確かめる（`@types/punycode` を足すか、`src/types/punycode.d.ts` で宣言する。上の「ツールチェーン」を参照）
-- [ ] tsconfig を `tsconfig.json`（ブラウザ）と `tsconfig.node.json`（Node）に分け、`typecheck` で両方を検査する
-- [ ] `scripts/build.ts` を作る（`src/background.ts` と `src/blocked.ts` をエントリにし、静的ファイルを `dist/` にコピーする）
-- [ ] `package.json` の scripts: `build`、`build:watch` を追加し、Node 用の `dev` を削除する
-- [ ] サンプルの `greet.ts`、`greet.test.ts`、`index.ts` を削除し、カバレッジの除外設定を新しい入口に合わせる
-- [ ] `.gitignore` に `dist/` を追加する
-- [ ] テンプレートから変えた点を README の「テンプレートとの差分」に書く（`copier update` で衝突したときのため）
+- [x] devDependencies に `esbuild`、`@types/chrome` を、dependencies に `punycode` を追加する
+  - esbuild は `0.28.2` に固定した。pnpm 12 は許可していないビルドスクリプトで止まるので、`pnpm-workspace.yaml` の `allowBuilds` で esbuild のスクリプトを明示的に拒否した（バイナリは optionalDependencies から入り、スクリプトなしで動く）
+- [x] `import { toUnicode } from "punycode/"` が strict の型検査を通ることを確かめる（`@types/punycode` を足すか、`src/types/punycode.d.ts` で宣言する。上の「ツールチェーン」を参照）
+  - `@types/punycode` で通った。esbuild と Vitest は npm 版に解決した。素の Node の ESM ではディレクトリの import が使えずに失敗するが、`src/` を Node で直接動かすことはないので問題ない
+- [x] tsconfig を `tsconfig.json`（ブラウザ）と `tsconfig.node.json`（Node）に分け、`typecheck` で両方を検査する
+- [x] `scripts/build.ts` を作る（`src/background.ts` と `src/blocked.ts` をエントリにし、静的ファイルを `dist/` にコピーする）
+  - 仮の入力ファイルで `build` と `build:watch` を確かめた。watch は静的ファイルも監視し、連続した保存でコピーが競合しないように直列に実行する
+- [x] `package.json` の scripts: `build`、`build:watch` を追加し、Node 用の `dev` を削除する
+- [x] サンプルの `greet.ts`、`greet.test.ts`、`index.ts` を削除し、カバレッジの除外設定を新しい入口に合わせる
+  - `index.ts` だけ削除した。`greet` の2ファイルは Phase 2 で最初のテストを足すときに削除する（テストが0本になると Vitest が失敗し、`check` と CI が赤になるため。`passWithNoTests` はテストが消えても気づけなくなるので使わない）
+- [x] `.gitignore` に `dist/` を追加する
+- [x] テンプレートから変えた点を README の「テンプレートとの差分」に書く（`copier update` で衝突したときのため）
 
 ## Phase 2: core（TDD）
 
 各モジュールでテストを先に書き、失敗を確認してから実装する。
+
+- [ ] 最初のテストを足すときに、サンプルの `greet.ts`、`greet.test.ts` を削除し、README の「テンプレートとの差分」の `src/` の行を更新する
 
 - [ ] `block-rule.ts`: `buildBlockRule(warningPageUrl)` が DNR の `Rule` を返す
   - [ ] 正規表現の一致のテスト: `xn--` で始まるホスト、サブドメインだけが IDN、TLD だけが IDN（`example.xn--q9jyb4c`）、ポート付き、userinfo 付きでホストが IDN（`https://user@xn--80a6aa68c8d.com/`）

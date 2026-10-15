@@ -17,5 +17,5 @@
       "plugins": ["typescript", "unicorn", "import", "vitest"]
     }
   ],
-  "ignorePatterns": ["coverage/**"]
+  "ignorePatterns": ["coverage/**", "dist/**"]
 }
