@@ -24,7 +24,7 @@ describe("describeHost: Unicode and Punycode forms", () => {
   });
 });
 
-describe("describeHost: characters and scripts", () => {
+describe("describeHost: characters", () => {
   test("lists every character of a label that mixes Cyrillic and Latin", () => {
     const description = describeHost("xn--pple-43d.com");
 
@@ -42,6 +42,21 @@ describe("describeHost: characters and scripts", () => {
     ]);
   });
 
+  test("keeps a character outside the BMP whole and writes its five-digit code point", () => {
+    const description = describeHost("xn--ls8h.la");
+
+    expect(description.unicode).toBe("💩.la");
+    expect(description.characters[0]).toEqual({
+      character: "💩",
+      script: "Other",
+      codePoint: "U+1F4A9",
+      isAscii: false,
+    });
+    expect(description.characters).toHaveLength(4);
+  });
+});
+
+describe("describeHost: scripts", () => {
   test("names Han and Katakana in Japanese labels", () => {
     const description = describeHost("xn--wgv71a119e.xn--zckzah");
 

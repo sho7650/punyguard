@@ -1,7 +1,8 @@
 // Builds the unpacked extension into dist/.
 // Usage: node scripts/build.ts [--watch]
-import { watch } from "node:fs";
+import { statSync, watch } from "node:fs";
 import { cp, rm } from "node:fs/promises";
+import path from "node:path";
 import * as esbuild from "esbuild";
 
 const OUT_DIR = "dist";
@@ -50,6 +51,23 @@ function createSerialQueue(): (task: () => Promise<void>) => void {
   };
 }
 
+// Calls onChange whenever the static file (or anything inside a static directory) changes.
+// A file is watched through its parent directory: editors often save by writing a temporary
+// file and renaming it over the original, and a watcher on the file itself would stay on the
+// replaced inode and miss every later save.
+function watchStaticFile(file: StaticFile, onChange: () => void): void {
+  if (statSync(file.from).isDirectory()) {
+    watch(file.from, { recursive: true }, onChange);
+    return;
+  }
+  const name = path.basename(file.from);
+  watch(path.dirname(file.from), (_event, filename) => {
+    if (filename === name) {
+      onChange();
+    }
+  });
+}
+
 async function buildOnce(): Promise<void> {
   await esbuild.build(buildOptions);
   await copyStaticFiles();
@@ -62,7 +80,7 @@ async function buildAndWatch(): Promise<void> {
   // esbuild only watches the bundled sources, so the static files need their own watcher.
   const enqueue = createSerialQueue();
   for (const file of STATIC_FILES) {
-    watch(file.from, { recursive: true }, () => {
+    watchStaticFile(file, () => {
       enqueue(() => copyStaticFile(file));
     });
   }

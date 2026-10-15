@@ -1,4 +1,4 @@
-import { toUnicode, ucs2 } from "punycode/";
+import { toUnicode } from "punycode/";
 
 export interface HostCharacter {
   readonly character: string;
@@ -36,8 +36,9 @@ function scriptOf(character: string): string {
   return "Other";
 }
 
-function describeCharacter(codePoint: number): HostCharacter {
-  const character = String.fromCodePoint(codePoint);
+function describeCharacter(character: string): HostCharacter {
+  // Array.from never yields an empty string; the fallback only satisfies the type.
+  const codePoint = character.codePointAt(0) ?? 0;
   return {
     character,
     script: scriptOf(character),
@@ -60,6 +61,7 @@ export function describeHost(asciiHost: string): HostDescription {
   return {
     unicode,
     punycode: asciiHost,
-    characters: ucs2.decode(unicode).map((codePoint) => describeCharacter(codePoint)),
+    // Array.from splits by code point, so characters outside the BMP stay whole.
+    characters: Array.from(unicode, (character) => describeCharacter(character)),
   };
 }

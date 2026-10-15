@@ -132,7 +132,7 @@ e2e/                     Playwright
 - [x] devDependencies に `esbuild`、`@types/chrome` を、dependencies に `punycode` を追加する
   - esbuild は `0.28.2` に固定した。pnpm 12 は許可していないビルドスクリプトで止まるので、`pnpm-workspace.yaml` の `allowBuilds` で esbuild のスクリプトを明示的に拒否した（バイナリは optionalDependencies から入り、スクリプトなしで動く）
 - [x] `import { toUnicode } from "punycode/"` が strict の型検査を通ることを確かめる（`@types/punycode` を足すか、`src/types/punycode.d.ts` で宣言する。上の「ツールチェーン」を参照）
-  - `@types/punycode` で通った。esbuild と Vitest は npm 版に解決した。素の Node の ESM ではディレクトリの import が使えずに失敗するが、`src/` を Node で直接動かすことはないので問題ない
+  - `@types/punycode` で通った。esbuild と Vitest は npm 版に解決した。ただし、esbuild はブラウザ向けに `module`（`punycode.es6.js`）を、Vitest は `main`（`punycode.js`）を選んでいて、export が食い違っていた（PR #1 のレビューで判明。`ucs2` は CommonJS 版にしかない）。`vitest.config.ts` の `ssr.resolve.mainFields` を esbuild と同じ順序にして、テストと配布物で同じファイルを読み込むようにした。素の Node の ESM ではディレクトリの import が使えずに失敗するが、`src/` を Node で直接動かすことはないので問題ない
 - [x] tsconfig を `tsconfig.json`（ブラウザ）と `tsconfig.node.json`（Node）に分け、`typecheck` で両方を検査する
 - [x] `scripts/build.ts` を作る（`src/background.ts` と `src/blocked.ts` をエントリにし、静的ファイルを `dist/` にコピーする）
   - 仮の入力ファイルで `build` と `build:watch` を確かめた。watch は静的ファイルも監視し、連続した保存でコピーが競合しないように直列に実行する
