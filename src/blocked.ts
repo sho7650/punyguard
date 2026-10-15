@@ -12,8 +12,10 @@ function requireElement<T extends HTMLElement>(id: string, type: new () => T): T
   return element;
 }
 
+// The page shows the Japanese or the English catalog, so lang names the catalog in use,
+// not the browser's UI language (which may be one with no catalog, such as French).
 function localize(): void {
-  document.documentElement.lang = chrome.i18n.getUILanguage();
+  document.documentElement.lang = chrome.i18n.getMessage("lang");
   for (const element of document.querySelectorAll<HTMLElement>("[data-i18n]")) {
     const key = element.dataset["i18n"];
     if (key !== undefined) {
@@ -77,8 +79,17 @@ function showActions(): void {
   requireElement("actions", HTMLElement).hidden = false;
 }
 
+// Chrome strips everything from the first ":~:" (a fragment directive) out of
+// location.hash, which would cut short an original URL such as one with "#:~:text=".
+// The navigation entry keeps the URL as it was navigated to.
+function blockedFragment(): string {
+  const url = navigation.currentEntry?.url ?? "";
+  const start = url.indexOf("#");
+  return start === -1 ? location.hash : url.slice(start);
+}
+
 localize();
-const blockedUrl = parseBlockedUrl(location.hash);
+const blockedUrl = parseBlockedUrl(blockedFragment());
 if (blockedUrl === null) {
   requireElement("unreadable", HTMLElement).hidden = false;
 } else {

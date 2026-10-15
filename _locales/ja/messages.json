@@ -1,4 +1,8 @@
 {
+  "lang": {
+    "message": "ja",
+    "description": "警告ページの <html lang>。実際に表示しているカタログの言語コード。"
+  },
   "actionTitle": {
     "message": "PunyGuard",
     "description": "ツールバーアイコンのツールチップ。問題があれば、その下に1行ずつ続く。"

@@ -93,7 +93,7 @@ e2e/                     Playwright
 - スクリプトが動かなくても警告として成り立つように作る。`allow-scripts` のない sandbox 付き iframe に転送されると、sandbox の制約が引き継がれて `blocked.ts` が実行されないため。
   - `blocked.html` には、日英併記の固定の警告文（「PunyGuard がこのページへの移動を止めました / PunyGuard blocked this page」と、国際化ドメインを止める拡張機能であることの短い説明）を最初から書いておく
   - 詳細の欄と操作ボタンは、HTML では `hidden` にしておく。`blocked.ts` が動いたときだけ、固定の文言をブラウザの言語の文言に差し替え、詳細を埋めて表示する
-- `location.hash` から元の URL を取り出す。ウェブページ側からも任意のフラグメントを付けてこのページを開けるので、中身は信用しない。
+- フラグメントから元の URL を取り出す（`location.hash` は `:~:` 以降が削られるので、`navigation.currentEntry.url` の最初の `#` 以降を使い、取れなければ `location.hash` を使う）。ウェブページ側からも任意のフラグメントを付けてこのページを開けるので、中身は信用しない。
   - 解析できない URL のときは、ホスト情報を出さずに汎用の文言を表示する
   - DOM への出力はすべて `textContent` で行い、`innerHTML` は使わない
   - 元の URL へ移動する操作やコピーする操作は用意しない
@@ -195,9 +195,11 @@ e2e/                     Playwright
   - [ ] 直接の遷移、リンクのクリック、302 リダイレクト、iframe（iframe では操作ボタンがないこと）
   - [ ] `sandbox` 属性付き（`allow-scripts` なし）の iframe: テストサーバーの IDN ホスト用ページへのリクエストが届かず、その中身が表示されないこと。転送された場合は、日英併記の固定の警告文が見え、詳細の欄と操作ボタンが見えないことも確かめる
   - [ ] 警告ページの表示内容（Unicode 表記、Punycode 表記、`ө` の文字種とコードポイント）
+  - [ ] 元の URL に `:~:` があっても、「アドレス」欄に元の URL がそのまま出る（`/a:~:b`、`#:~:text=hello`、`#frag:~:text=x`）。Chrome は `location.hash` から最初の `:~:` 以降を取り除くので、警告ページは `navigation.currentEntry.url` から読む（PR #2 のレビューで見つかった）
   - [ ] 操作ボタン: ASCII ホストのページからリンクで警告ページへ来たとき、「前のページに戻る」が表示され、押すと元のページに戻る / 新しいタブの最初のページとして開いたとき、「前のページに戻る」が表示されない / どちらの場合も「このタブを閉じる」でタブが閉じる
   - [ ] ASCII ホストで日本語のパスを開いても遮断されない
   - [ ] 言語の切り替え: Linux（CI）では、`launchPersistentContext` の `env` に `LANGUAGE=ja`（または `LANGUAGE=en`）を渡して起動し、文言を確かめる。Linux の Chromium は表示言語を `--lang` ではなく環境変数（`LANGUAGE`、`LC_ALL`、`LC_MESSAGES`、`LANG` の順）から決める。macOS の Chromium は OS のバンドル設定から決めるので、macOS ではこのテストを `test.skip` で飛ばし、Phase 6 の手動確認で補う
+    - `<html lang>` が表示しているカタログの言語（`ja` か `en`）になることも確かめる。`getUILanguage()` は表示に使うカタログと一致しないことがある（macOS の Chromium に `LANGUAGE=ja` を渡すと、`getUILanguage()` は `ja` を返すのに英語のカタログが使われた）ので、`lang` はカタログの `lang` キーから設定している
   - [ ] 同じプロファイル（`userDataDir`）でブラウザを閉じて起動し直しても遮断が続く
   - [ ] フラグメントにスクリプトを仕込んで警告ページを開いても、HTML として解釈されない
 - [ ] `pnpm run test:e2e` を追加する。中身は `pnpm run build && playwright test` にして、毎回 `dist/` を作り直してから E2E を実行する（`dist/` は `.gitignore` に入っていて、クリーンなチェックアウトには存在しないため。pnpm は既定では `pre` スクリプトを実行しないので、`pretest:e2e` には頼らない）

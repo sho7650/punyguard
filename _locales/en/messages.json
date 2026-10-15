@@ -1,4 +1,8 @@
 {
+  "lang": {
+    "message": "en",
+    "description": "The warning page's <html lang>: the language of the catalog actually shown."
+  },
   "actionTitle": {
     "message": "PunyGuard",
     "description": "Toolbar icon tooltip. Problems, if any, follow on their own lines."
