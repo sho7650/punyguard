@@ -1,0 +1,14 @@
+{
+  "actionTitle": {
+    "message": "PunyGuard",
+    "description": "Toolbar icon tooltip. Problems, if any, follow on their own lines."
+  },
+  "problemRuleNotRegistered": {
+    "message": "Blocking is off: the blocking rule could not be registered.",
+    "description": "Tooltip line shown with the ! badge when updateDynamicRules failed."
+  },
+  "problemNoSiteAccess": {
+    "message": "Blocking is off: set site access to \"On all sites\".",
+    "description": "Tooltip line shown with the ! badge when the extension cannot access all sites."
+  }
+}

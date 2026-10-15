@@ -63,7 +63,7 @@ This project is a Chrome extension, not a Node.js program, so it changes the tem
 | `scripts/build.ts`             | New. Bundles `src/background.ts` and `src/blocked.ts` with esbuild and copies the manifest, HTML, CSS and `_locales` into `dist/`                    |
 | `vitest.config.ts`             | Coverage excludes the entry points `src/background.ts` and `src/blocked.ts` instead of `src/index.ts`                                                |
 | `.oxlintrc.json`, `.gitignore` | Ignore `dist/`                                                                                                                                       |
-| `src/`                         | `src/index.ts` is removed                                                                                                                            |
+| `src/`                         | The `greet` sample and `src/index.ts` are removed                                                                                                    |
 
 ## Scripts
 

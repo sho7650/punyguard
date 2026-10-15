@@ -146,25 +146,27 @@ e2e/                     Playwright
 
 各モジュールでテストを先に書き、失敗を確認してから実装する。
 
-- [ ] 最初のテストを足すときに、サンプルの `greet.ts`、`greet.test.ts` を削除し、README の「テンプレートとの差分」の `src/` の行を更新する
+- [x] 最初のテストを足すときに、サンプルの `greet.ts`、`greet.test.ts` を削除し、README の「テンプレートとの差分」の `src/` の行を更新する
 
-- [ ] `block-rule.ts`: `buildBlockRule(warningPageUrl)` が DNR の `Rule` を返す
-  - [ ] 正規表現の一致のテスト: `xn--` で始まるホスト、サブドメインだけが IDN、TLD だけが IDN（`example.xn--q9jyb4c`）、ポート付き、userinfo 付きでホストが IDN（`https://user@xn--80a6aa68c8d.com/`）
-  - [ ] 正規表現の不一致のテスト: ASCII ホスト、パスやクエリに `xn--` を含む、`axn--b.com` のようにラベルの途中に `xn--` がある、IP アドレス、`localhost`
-  - [ ] 既知の誤検知を仕様として固定するテスト: `https://xn--a@example.com/` は一致する（「将来」節を参照）
-  - [ ] 置換のテスト: `regexSubstitution` を適用した結果が `<警告ページの URL>#<元の URL 全体>` になる
+- [x] `block-rule.ts`: `buildBlockRule(warningPageUrl)` が DNR の `Rule` を返す
+  - [x] 正規表現の一致のテスト: `xn--` で始まるホスト、サブドメインだけが IDN、TLD だけが IDN（`example.xn--q9jyb4c`）、ポート付き、userinfo 付きでホストが IDN（`https://user@xn--80a6aa68c8d.com/`）
+  - [x] 正規表現の不一致のテスト: ASCII ホスト、パスやクエリに `xn--` を含む、`axn--b.com` のようにラベルの途中に `xn--` がある、IP アドレス、`localhost`
+  - [x] 既知の誤検知を仕様として固定するテスト: `https://xn--a@example.com/` は一致する（「将来」節を参照）
+  - [x] 置換のテスト: `regexSubstitution` を適用した結果が `<警告ページの URL>#<元の URL 全体>` になる
   - RE2 で使えるかどうかは単体テストでは確かめられないので、Phase 4 の E2E で確かめる
-- [ ] `protection.ts`: `ensureProtection(deps)` が、ルールの登録とアクセス権の確認を行い、結果に応じてバッジとツールチップを更新する（`deps` に DNR、`permissions.contains`、バッジ、ツールチップ、ログの関数を渡し、テストでは偽物を渡す）
-  - [ ] 登録に成功し、アクセス権もあれば、既存のルール ID を削除して新しいルールを追加し、バッジを消す
-  - [ ] 登録に失敗したら、エラーをログに出してバッジに `!` を出し、ツールチップに原因を出す。例外は外に投げない
-  - [ ] 登録に成功しても、すべてのサイトへのアクセス権がなければ、バッジに `!` を出し、ツールチップに原因を出す
-  - [ ] 両方とも満たさないときも、バッジは `!` を1つだけ出し、ツールチップに両方の原因を出す
-- [ ] `blocked-url.ts`: `parseBlockedUrl(hash)` が `URL` か `null` を返す
-  - [ ] 空、`#` だけ、`http(s)` 以外のスキーム、壊れた URL は `null` になる
-- [ ] `host-description.ts`: `describeHost(asciiHost)` が Unicode 表記、Punycode 表記、文字ごとの情報（文字、文字種、コードポイント、ASCII かどうか）を返す
-  - [ ] `xn--80a6aa68c8d.com` → `аррӏө.com`、`ө` は Cyrillic の U+04E9
-  - [ ] ラテン文字とキリル文字が混在するラベル、日本語のラベル、不正な Punycode（デコードに失敗したら Punycode 表記のまま返す）
-- [ ] `_locales/ja/messages.json` と `_locales/en/messages.json` のキーが一致することを確かめるテスト（言語の切り替えそのものは E2E で確かめる）
+- [x] `protection.ts`: `ensureProtection(deps)` が、ルールの登録とアクセス権の確認を行い、結果に応じてバッジとツールチップを更新する（`deps` に DNR、`permissions.contains`、バッジ、ツールチップ、ログの関数を渡し、テストでは偽物を渡す）
+  - [x] 登録に成功し、アクセス権もあれば、既存のルール ID を削除して新しいルールを追加し、バッジを消す
+  - [x] 登録に失敗したら、エラーをログに出してバッジに `!` を出し、ツールチップに原因を出す。例外は外に投げない
+  - [x] 登録に成功しても、すべてのサイトへのアクセス権がなければ、バッジに `!` を出し、ツールチップに原因を出す
+  - [x] 両方とも満たさないときも、バッジは `!` を1つだけ出し、ツールチップに両方の原因を出す
+  - [x] （追加）アクセス権の確認そのものが失敗したら、エラーをログに出し、アクセス権がないものとして扱う。例外は外に投げない（保護が効いているか確かめられないため、安全側に倒す）
+  - `deps` の形は計画から2点変えた。`permissions.contains` の代わりに `containsOrigins(origins: readonly string[])` を受け取る（`"<all_urls>"` を問い合わせることは core に残してテストする）。ツールチップの文言を引く `getMessage` を足した。ツールチップは「拡張機能名」の下に原因を1行ずつ並べる
+- [x] `blocked-url.ts`: `parseBlockedUrl(hash)` が `URL` か `null` を返す
+  - [x] 空、`#` だけ、`http(s)` 以外のスキーム、壊れた URL は `null` になる
+- [x] `host-description.ts`: `describeHost(asciiHost)` が Unicode 表記、Punycode 表記、文字ごとの情報（文字、文字種、コードポイント、ASCII かどうか）を返す
+  - [x] `xn--80a6aa68c8d.com` → `аррӏө.com`、`ө` は Cyrillic の U+04E9
+  - [x] ラテン文字とキリル文字が混在するラベル、日本語のラベル、不正な Punycode（デコードに失敗したら Punycode 表記のまま返す）
+- [x] `_locales/ja/messages.json` と `_locales/en/messages.json` のキーが一致することを確かめるテスト（言語の切り替えそのものは E2E で確かめる）
 
 ## Phase 3: 拡張機能本体
 
