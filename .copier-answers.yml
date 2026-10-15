@@ -1,0 +1,6 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v0.1.0
+_src_path: gh:sho7650/copier-ts7
+author_name: sho
+description: Chrome extension that blocks navigation to IDN (xn--) hosts
+project_name: punyguard

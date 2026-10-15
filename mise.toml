@@ -1,0 +1,3 @@
+# Node.js and pnpm come from flake.nix; mise does not manage them here (docs/template-decisions.md D14)
+[settings]
+disable_tools = ["node", "pnpm"]
