@@ -10,5 +10,113 @@
   "problemNoSiteAccess": {
     "message": "Blocking is off: set site access to \"On all sites\".",
     "description": "Tooltip line shown with the ! badge when the extension cannot access all sites."
+  },
+  "extensionName": {
+    "message": "PunyGuard",
+    "description": "Extension name."
+  },
+  "extensionDescription": {
+    "message": "Blocks navigation to internationalized domain names (IDN, xn--) and shows a warning page instead.",
+    "description": "Extension description in the Chrome Web Store and chrome://extensions."
+  },
+  "pageTitle": {
+    "message": "PunyGuard: page blocked",
+    "description": "Title of the warning page."
+  },
+  "heading": {
+    "message": "PunyGuard blocked this page",
+    "description": "Main heading of the warning page."
+  },
+  "explanation": {
+    "message": "This page's address uses an internationalized domain name (IDN). Letters from other scripts can make such an address look like a familiar site, so PunyGuard blocks every IDN host.",
+    "description": "Why the page was blocked."
+  },
+  "unreadableUrl": {
+    "message": "The address of the blocked page could not be read.",
+    "description": "Shown instead of the details when the fragment does not hold an http(s) URL."
+  },
+  "labelOriginalUrl": {
+    "message": "Address",
+    "description": "Label for the blocked URL, shown as plain text."
+  },
+  "labelUnicode": {
+    "message": "Host (Unicode)",
+    "description": "Label for the host as the user would see it."
+  },
+  "labelPunycode": {
+    "message": "Host (Punycode)",
+    "description": "Label for the xn-- form of the host."
+  },
+  "headingCharacters": {
+    "message": "Non-ASCII characters in the host",
+    "description": "Heading of the character table."
+  },
+  "columnCharacter": {
+    "message": "Character",
+    "description": "Table column."
+  },
+  "columnScript": {
+    "message": "Script",
+    "description": "Table column."
+  },
+  "columnCodePoint": {
+    "message": "Code point",
+    "description": "Table column."
+  },
+  "closeTab": {
+    "message": "Close this tab",
+    "description": "Primary button."
+  },
+  "goBack": {
+    "message": "Go back",
+    "description": "Secondary button, shown when the tab has history."
+  },
+  "scriptLatin": {
+    "message": "Latin",
+    "description": "Script name."
+  },
+  "scriptCyrillic": {
+    "message": "Cyrillic",
+    "description": "Script name."
+  },
+  "scriptGreek": {
+    "message": "Greek",
+    "description": "Script name."
+  },
+  "scriptArmenian": {
+    "message": "Armenian",
+    "description": "Script name."
+  },
+  "scriptHan": {
+    "message": "Han",
+    "description": "Script name."
+  },
+  "scriptHiragana": {
+    "message": "Hiragana",
+    "description": "Script name."
+  },
+  "scriptKatakana": {
+    "message": "Katakana",
+    "description": "Script name."
+  },
+  "scriptHangul": {
+    "message": "Hangul",
+    "description": "Script name."
+  },
+  "scriptArabic": {
+    "message": "Arabic",
+    "description": "Script name."
+  },
+  "scriptHebrew": {
+    "message": "Hebrew",
+    "description": "Script name."
+  },
+  "scriptThai": {
+    "message": "Thai",
+    "description": "Script name."
+  },
+  "scriptOther": {
+    "message": "Other",
+    "description": "Script name for anything not listed."
   }
 }

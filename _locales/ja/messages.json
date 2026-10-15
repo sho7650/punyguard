@@ -10,5 +10,113 @@
   "problemNoSiteAccess": {
     "message": "遮断が効いていません: サイトへのアクセスを「すべてのサイト」にしてください。",
     "description": "すべてのサイトへのアクセス権がないとき、バッジの ! とともにツールチップに出す行。"
+  },
+  "extensionName": {
+    "message": "PunyGuard",
+    "description": "Extension name."
+  },
+  "extensionDescription": {
+    "message": "国際化ドメイン名（IDN、xn--）への移動を止め、代わりに警告ページを表示します。",
+    "description": "Extension description in the Chrome Web Store and chrome://extensions."
+  },
+  "pageTitle": {
+    "message": "PunyGuard: 移動を止めました",
+    "description": "Title of the warning page."
+  },
+  "heading": {
+    "message": "PunyGuard がこのページへの移動を止めました",
+    "description": "Main heading of the warning page."
+  },
+  "explanation": {
+    "message": "このページのアドレスには国際化ドメイン名（IDN）が使われています。IDN では、ほかの文字体系の文字を使って見慣れたサイトのアドレスに似せられるため、PunyGuard は IDN のホストへの移動をすべて止めます。",
+    "description": "Why the page was blocked."
+  },
+  "unreadableUrl": {
+    "message": "止めたページのアドレスを読み取れませんでした。",
+    "description": "Shown instead of the details when the fragment does not hold an http(s) URL."
+  },
+  "labelOriginalUrl": {
+    "message": "アドレス",
+    "description": "Label for the blocked URL, shown as plain text."
+  },
+  "labelUnicode": {
+    "message": "ホスト（Unicode 表記）",
+    "description": "Label for the host as the user would see it."
+  },
+  "labelPunycode": {
+    "message": "ホスト（Punycode 表記）",
+    "description": "Label for the xn-- form of the host."
+  },
+  "headingCharacters": {
+    "message": "ホストに含まれる ASCII 以外の文字",
+    "description": "Heading of the character table."
+  },
+  "columnCharacter": {
+    "message": "文字",
+    "description": "Table column."
+  },
+  "columnScript": {
+    "message": "文字種",
+    "description": "Table column."
+  },
+  "columnCodePoint": {
+    "message": "コードポイント",
+    "description": "Table column."
+  },
+  "closeTab": {
+    "message": "このタブを閉じる",
+    "description": "Primary button."
+  },
+  "goBack": {
+    "message": "前のページに戻る",
+    "description": "Secondary button, shown when the tab has history."
+  },
+  "scriptLatin": {
+    "message": "ラテン文字",
+    "description": "Script name."
+  },
+  "scriptCyrillic": {
+    "message": "キリル文字",
+    "description": "Script name."
+  },
+  "scriptGreek": {
+    "message": "ギリシャ文字",
+    "description": "Script name."
+  },
+  "scriptArmenian": {
+    "message": "アルメニア文字",
+    "description": "Script name."
+  },
+  "scriptHan": {
+    "message": "漢字",
+    "description": "Script name."
+  },
+  "scriptHiragana": {
+    "message": "ひらがな",
+    "description": "Script name."
+  },
+  "scriptKatakana": {
+    "message": "カタカナ",
+    "description": "Script name."
+  },
+  "scriptHangul": {
+    "message": "ハングル",
+    "description": "Script name."
+  },
+  "scriptArabic": {
+    "message": "アラビア文字",
+    "description": "Script name."
+  },
+  "scriptHebrew": {
+    "message": "ヘブライ文字",
+    "description": "Script name."
+  },
+  "scriptThai": {
+    "message": "タイ文字",
+    "description": "Script name."
+  },
+  "scriptOther": {
+    "message": "その他",
+    "description": "Script name for anything not listed."
   }
 }
