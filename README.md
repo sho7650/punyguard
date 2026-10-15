@@ -50,12 +50,28 @@ The working tree must be clean. Your earlier answers are reused, so nothing is a
 
 Files that belong to the template are replaced or merged on update: do not run `nix flake update` (the template updates `flake.lock`), and do not edit `docs/template-decisions.md` or `docs/template-claude.md`. `README.md`, `LICENSE`, `CLAUDE.md` and `docs/decisions.md` are yours and are never touched by an update.
 
+## Differences from the template
+
+This project is a Chrome extension, not a Node.js program, so it changes the template in the places below. Keep them in mind when `nix run .#update` reports conflicts.
+
+| File                           | Change                                                                                                                                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tsconfig.json`                | Covers only `src/` (browser code): `module: "preserve"`, `moduleResolution: "bundler"`, `lib: ["esnext", "dom"]`, `types: ["chrome"]`                                                                              |
+| `tsconfig.node.json`           | New. The template's Node.js settings, for `scripts/`, `e2e/` and `*.config.ts`                                                                                                                                     |
+| `package.json`                 | `typecheck` checks both tsconfigs. `build` and `build:watch` added; `dev` removed. Adds `esbuild`, `@types/chrome`, `@types/punycode` and `punycode`                                                               |
+| `pnpm-workspace.yaml`          | New. Denies esbuild's build script (`allowBuilds`); its binary comes from optionalDependencies                                                                                                                     |
+| `scripts/build.ts`             | New. Bundles `src/background.ts` and `src/blocked.ts` with esbuild and copies the manifest, HTML, CSS and `_locales` into `dist/`                                                                                  |
+| `vitest.config.ts`             | Resolves packages with the same main fields as the esbuild browser bundle, so tests import the shipped file. Coverage excludes the entry points `src/background.ts` and `src/blocked.ts` instead of `src/index.ts` |
+| `.oxlintrc.json`, `.gitignore` | Ignore `dist/`                                                                                                                                                                                                     |
+| `src/`                         | The `greet` sample and `src/index.ts` are removed                                                                                                                                                                  |
+
 ## Scripts
 
 | Script                   | What it does                                    |
 | ------------------------ | ----------------------------------------------- |
-| `pnpm run dev`           | Run `src/index.ts` with `node --watch`          |
-| `pnpm run typecheck`     | Type-check with TypeScript 7                    |
+| `pnpm run build`         | Build the unpacked extension into `dist/`       |
+| `pnpm run build:watch`   | Rebuild `dist/` on every change                 |
+| `pnpm run typecheck`     | Type-check `src/` and the Node.js side          |
 | `pnpm test`              | Run Vitest in watch mode                        |
 | `pnpm run test:run`      | Run tests once                                  |
 | `pnpm run test:coverage` | Run tests with coverage thresholds              |

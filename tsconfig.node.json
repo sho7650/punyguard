@@ -1,0 +1,24 @@
+{
+  // Node.js side: build script, E2E tests and tool configs.
+  // Same settings as the template's tsconfig.json (docs/template-decisions.md D6, D7)
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "nodenext",
+    "types": ["node"],
+
+    // No emit; Node.js runs .ts files directly with type stripping (D6)
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+
+    // strict is the default in TypeScript 7; stated to document the intent (D7)
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["scripts", "e2e", "*.config.ts"]
+}

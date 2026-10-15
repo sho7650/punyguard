@@ -1,0 +1,14 @@
+{
+  "actionTitle": {
+    "message": "PunyGuard",
+    "description": "ツールバーアイコンのツールチップ。問題があれば、その下に1行ずつ続く。"
+  },
+  "problemRuleNotRegistered": {
+    "message": "遮断が効いていません: 遮断ルールを登録できませんでした。",
+    "description": "updateDynamicRules が失敗したとき、バッジの ! とともにツールチップに出す行。"
+  },
+  "problemNoSiteAccess": {
+    "message": "遮断が効いていません: サイトへのアクセスを「すべてのサイト」にしてください。",
+    "description": "すべてのサイトへのアクセス権がないとき、バッジの ! とともにツールチップに出す行。"
+  }
+}

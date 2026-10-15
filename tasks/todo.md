@@ -122,43 +122,51 @@ e2e/                     Playwright
 
 ## Phase 0: プロジェクト生成
 
-- [ ] `copier copy gh:sho7650/copier-ts7 .` で生成する（project_name: `punyguard`）。既存の `CONTEXT.md`、`docs/`、`tasks/` が上書きされないことを確認する
-- [ ] `direnv allow` → `pnpm install` → `pnpm run check` が通ることを確認する
-- [ ] `git init`。最初のコミットは `chore: initial commit from copier-ts7`
-- [ ] （作者が確認してから）GitHub に `punyguard` リポジトリを作って push する。Actions の権限設定は Phase 5 で行う
+- [x] `copier copy gh:sho7650/copier-ts7 .` で生成する（project_name: `punyguard`）。既存の `CONTEXT.md`、`docs/`、`tasks/` が上書きされないことを確認する
+- [x] `direnv allow` → `pnpm install` → `pnpm run check` が通ることを確認する
+- [x] `git init`。最初のコミットは `chore: initial commit from copier-ts7`
+- [x] （作者が確認してから）GitHub に `punyguard` リポジトリを作って push する。Actions の権限設定は Phase 5 で行う
 
 ## Phase 1: 拡張機能向けにツールチェーンを変える
 
-- [ ] devDependencies に `esbuild`、`@types/chrome` を、dependencies に `punycode` を追加する
-- [ ] `import { toUnicode } from "punycode/"` が strict の型検査を通ることを確かめる（`@types/punycode` を足すか、`src/types/punycode.d.ts` で宣言する。上の「ツールチェーン」を参照）
-- [ ] tsconfig を `tsconfig.json`（ブラウザ）と `tsconfig.node.json`（Node）に分け、`typecheck` で両方を検査する
-- [ ] `scripts/build.ts` を作る（`src/background.ts` と `src/blocked.ts` をエントリにし、静的ファイルを `dist/` にコピーする）
-- [ ] `package.json` の scripts: `build`、`build:watch` を追加し、Node 用の `dev` を削除する
-- [ ] サンプルの `greet.ts`、`greet.test.ts`、`index.ts` を削除し、カバレッジの除外設定を新しい入口に合わせる
-- [ ] `.gitignore` に `dist/` を追加する
-- [ ] テンプレートから変えた点を README の「テンプレートとの差分」に書く（`copier update` で衝突したときのため）
+- [x] devDependencies に `esbuild`、`@types/chrome` を、dependencies に `punycode` を追加する
+  - esbuild は `0.28.2` に固定した。pnpm 12 は許可していないビルドスクリプトで止まるので、`pnpm-workspace.yaml` の `allowBuilds` で esbuild のスクリプトを明示的に拒否した（バイナリは optionalDependencies から入り、スクリプトなしで動く）
+- [x] `import { toUnicode } from "punycode/"` が strict の型検査を通ることを確かめる（`@types/punycode` を足すか、`src/types/punycode.d.ts` で宣言する。上の「ツールチェーン」を参照）
+  - `@types/punycode` で通った。esbuild と Vitest は npm 版に解決した。ただし、esbuild はブラウザ向けに `module`（`punycode.es6.js`）を、Vitest は `main`（`punycode.js`）を選んでいて、export が食い違っていた（PR #1 のレビューで判明。`ucs2` は CommonJS 版にしかない）。`vitest.config.ts` の `ssr.resolve.mainFields` を esbuild と同じ順序にして、テストと配布物で同じファイルを読み込むようにした。素の Node の ESM ではディレクトリの import が使えずに失敗するが、`src/` を Node で直接動かすことはないので問題ない
+- [x] tsconfig を `tsconfig.json`（ブラウザ）と `tsconfig.node.json`（Node）に分け、`typecheck` で両方を検査する
+- [x] `scripts/build.ts` を作る（`src/background.ts` と `src/blocked.ts` をエントリにし、静的ファイルを `dist/` にコピーする）
+  - 仮の入力ファイルで `build` と `build:watch` を確かめた。watch は静的ファイルも監視し、連続した保存でコピーが競合しないように直列に実行する
+- [x] `package.json` の scripts: `build`、`build:watch` を追加し、Node 用の `dev` を削除する
+- [x] サンプルの `greet.ts`、`greet.test.ts`、`index.ts` を削除し、カバレッジの除外設定を新しい入口に合わせる
+  - `index.ts` だけ削除した。`greet` の2ファイルは Phase 2 で最初のテストを足すときに削除する（テストが0本になると Vitest が失敗し、`check` と CI が赤になるため。`passWithNoTests` はテストが消えても気づけなくなるので使わない）
+- [x] `.gitignore` に `dist/` を追加する
+- [x] テンプレートから変えた点を README の「テンプレートとの差分」に書く（`copier update` で衝突したときのため）
 
 ## Phase 2: core（TDD）
 
 各モジュールでテストを先に書き、失敗を確認してから実装する。
 
-- [ ] `block-rule.ts`: `buildBlockRule(warningPageUrl)` が DNR の `Rule` を返す
-  - [ ] 正規表現の一致のテスト: `xn--` で始まるホスト、サブドメインだけが IDN、TLD だけが IDN（`example.xn--q9jyb4c`）、ポート付き、userinfo 付きでホストが IDN（`https://user@xn--80a6aa68c8d.com/`）
-  - [ ] 正規表現の不一致のテスト: ASCII ホスト、パスやクエリに `xn--` を含む、`axn--b.com` のようにラベルの途中に `xn--` がある、IP アドレス、`localhost`
-  - [ ] 既知の誤検知を仕様として固定するテスト: `https://xn--a@example.com/` は一致する（「将来」節を参照）
-  - [ ] 置換のテスト: `regexSubstitution` を適用した結果が `<警告ページの URL>#<元の URL 全体>` になる
+- [x] 最初のテストを足すときに、サンプルの `greet.ts`、`greet.test.ts` を削除し、README の「テンプレートとの差分」の `src/` の行を更新する
+
+- [x] `block-rule.ts`: `buildBlockRule(warningPageUrl)` が DNR の `Rule` を返す
+  - [x] 正規表現の一致のテスト: `xn--` で始まるホスト、サブドメインだけが IDN、TLD だけが IDN（`example.xn--q9jyb4c`）、ポート付き、userinfo 付きでホストが IDN（`https://user@xn--80a6aa68c8d.com/`）
+  - [x] 正規表現の不一致のテスト: ASCII ホスト、パスやクエリに `xn--` を含む、`axn--b.com` のようにラベルの途中に `xn--` がある、IP アドレス、`localhost`
+  - [x] 既知の誤検知を仕様として固定するテスト: `https://xn--a@example.com/` は一致する（「将来」節を参照）
+  - [x] 置換のテスト: `regexSubstitution` を適用した結果が `<警告ページの URL>#<元の URL 全体>` になる
   - RE2 で使えるかどうかは単体テストでは確かめられないので、Phase 4 の E2E で確かめる
-- [ ] `protection.ts`: `ensureProtection(deps)` が、ルールの登録とアクセス権の確認を行い、結果に応じてバッジとツールチップを更新する（`deps` に DNR、`permissions.contains`、バッジ、ツールチップ、ログの関数を渡し、テストでは偽物を渡す）
-  - [ ] 登録に成功し、アクセス権もあれば、既存のルール ID を削除して新しいルールを追加し、バッジを消す
-  - [ ] 登録に失敗したら、エラーをログに出してバッジに `!` を出し、ツールチップに原因を出す。例外は外に投げない
-  - [ ] 登録に成功しても、すべてのサイトへのアクセス権がなければ、バッジに `!` を出し、ツールチップに原因を出す
-  - [ ] 両方とも満たさないときも、バッジは `!` を1つだけ出し、ツールチップに両方の原因を出す
-- [ ] `blocked-url.ts`: `parseBlockedUrl(hash)` が `URL` か `null` を返す
-  - [ ] 空、`#` だけ、`http(s)` 以外のスキーム、壊れた URL は `null` になる
-- [ ] `host-description.ts`: `describeHost(asciiHost)` が Unicode 表記、Punycode 表記、文字ごとの情報（文字、文字種、コードポイント、ASCII かどうか）を返す
-  - [ ] `xn--80a6aa68c8d.com` → `аррӏө.com`、`ө` は Cyrillic の U+04E9
-  - [ ] ラテン文字とキリル文字が混在するラベル、日本語のラベル、不正な Punycode（デコードに失敗したら Punycode 表記のまま返す）
-- [ ] `_locales/ja/messages.json` と `_locales/en/messages.json` のキーが一致することを確かめるテスト（言語の切り替えそのものは E2E で確かめる）
+- [x] `protection.ts`: `ensureProtection(deps)` が、ルールの登録とアクセス権の確認を行い、結果に応じてバッジとツールチップを更新する（`deps` に DNR、`permissions.contains`、バッジ、ツールチップ、ログの関数を渡し、テストでは偽物を渡す）
+  - [x] 登録に成功し、アクセス権もあれば、既存のルール ID を削除して新しいルールを追加し、バッジを消す
+  - [x] 登録に失敗したら、エラーをログに出してバッジに `!` を出し、ツールチップに原因を出す。例外は外に投げない
+  - [x] 登録に成功しても、すべてのサイトへのアクセス権がなければ、バッジに `!` を出し、ツールチップに原因を出す
+  - [x] 両方とも満たさないときも、バッジは `!` を1つだけ出し、ツールチップに両方の原因を出す
+  - [x] （追加）アクセス権の確認そのものが失敗したら、エラーをログに出し、アクセス権がないものとして扱う。例外は外に投げない（保護が効いているか確かめられないため、安全側に倒す）
+  - `deps` の形は計画から2点変えた。`permissions.contains` の代わりに `containsOrigins(origins: readonly string[])` を受け取る（`"<all_urls>"` を問い合わせることは core に残してテストする）。ツールチップの文言を引く `getMessage` を足した。ツールチップは「拡張機能名」の下に原因を1行ずつ並べる
+- [x] `blocked-url.ts`: `parseBlockedUrl(hash)` が `URL` か `null` を返す
+  - [x] 空、`#` だけ、`http(s)` 以外のスキーム、壊れた URL は `null` になる
+- [x] `host-description.ts`: `describeHost(asciiHost)` が Unicode 表記、Punycode 表記、文字ごとの情報（文字、文字種、コードポイント、ASCII かどうか）を返す
+  - [x] `xn--80a6aa68c8d.com` → `аррӏө.com`、`ө` は Cyrillic の U+04E9
+  - [x] ラテン文字とキリル文字が混在するラベル、日本語のラベル、不正な Punycode（デコードに失敗したら Punycode 表記のまま返す）
+- [x] `_locales/ja/messages.json` と `_locales/en/messages.json` のキーが一致することを確かめるテスト（言語の切り替えそのものは E2E で確かめる）
 
 ## Phase 3: 拡張機能本体
 

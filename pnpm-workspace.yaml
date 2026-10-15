@@ -1,0 +1,4 @@
+# esbuild's postinstall only verifies its platform binary; the binary itself
+# comes from optionalDependencies, so the script is not needed.
+allowBuilds:
+  esbuild: false
