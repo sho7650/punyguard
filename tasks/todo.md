@@ -217,6 +217,7 @@ e2e/                     Playwright
     - `gh release upload` には `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` を渡す
     - トークンは `GITHUB_TOKEN` を使う。`GITHUB_TOKEN` が作った PR では他のワークフローが起動しないので、Release PR では CI が走らない。Release PR が変えるのはバージョン番号と CHANGELOG だけなので、個人のリポジトリとしては許容する。CI を走らせたくなったら、fine-grained PAT を secret に登録して `token` に渡す
   - [ ] リポジトリの Settings → Actions → General で、「Workflow permissions」を「Read and write permissions」にし、「Allow GitHub Actions to create and approve pull requests」を有効にする（作者が手で設定する）
+- [ ] 拡張機能のアイコン（16、32、48、128 px）を作り、`manifest.json` の `icons` と `action.default_icon` に設定する（Phase 3 の時点では未設定で、Chrome の既定のアイコンが出ている）
 - [ ] `LICENSE`（MIT）
 - [ ] `README.md`（日本語と英語）
   - [ ] 何をする拡張機能か、記事の例
