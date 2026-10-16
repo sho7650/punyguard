@@ -93,6 +93,12 @@ const blockedUrl = parseBlockedUrl(blockedFragment());
 if (blockedUrl === null) {
   requireElement("unreadable", HTMLElement).hidden = false;
 } else {
-  showDetails(hidePassword(blockedUrl.href), blockedUrl.hostname);
+  const shownUrl = hidePassword(blockedUrl.href);
+  // The address bar shows this page's own URL, with the original URL in the fragment.
+  // Only rewritten when there is a password, so ":~:" in other URLs is left alone.
+  if (blockedUrl.password !== "") {
+    history.replaceState(history.state, "", `#${shownUrl}`);
+  }
+  showDetails(shownUrl, blockedUrl.hostname);
 }
 showActions();

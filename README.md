@@ -29,7 +29,7 @@ PunyGuard is distributed on GitHub only, not in the Chrome Web Store.
 1. Download `punyguard-vX.Y.Z.zip` from [Releases](https://github.com/sho7650/punyguard/releases) and unzip it into a folder you will keep. Chrome loads the extension from that folder.
 2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the folder.
 3. Leave **Site access** at **On all sites** (see below).
-4. To be protected in Incognito windows too, turn on **Allow in Incognito** (see below).
+4. To block IDN hosts in Incognito windows too, turn on **Allow in Incognito** (see below).
 
 To update, replace the folder's contents with the new release and click the reload button on the extension's card.
 
@@ -51,6 +51,8 @@ If you limit **Site access** in `chrome://extensions` to **On click** or to spec
 ### Incognito windows
 
 Chrome does not run extensions in Incognito windows unless you turn on **Allow in Incognito** on the extension's details page in `chrome://extensions`. Until then, **IDN hosts are not blocked in Incognito windows**, and the `!` badge does not tell you so.
+
+Once allowed, IDN hosts are blocked there too, but **the warning page does not open**: Chrome cannot show an extension's own pages in Incognito tabs, so you get Chrome's "is blocked" page with `ERR_BLOCKED_BY_CLIENT` instead. The original URL is still in the address bar, after `blocked.html#`.
 
 Allowing it does not give PunyGuard anything to read: it only has Chrome apply the same rule there, and it still sends and stores nothing.
 

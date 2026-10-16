@@ -268,9 +268,10 @@ e2e/                     Playwright
   - Release PR は `GITHUB_TOKEN` が作るので、CI はリポジトリの画面で承認するまで走らない（`action_required`）。release-please が書き換える `CHANGELOG.md`、`.release-please-manifest.json`、`manifest.json` は oxfmt の対象から外した（`docs/decisions.md` の P2、PR #6）
   - レビューでは CRITICAL と HIGH はなかった。MEDIUM と、手間の小さい LOW を直した
     - シークレット ウィンドウでは、作者が「シークレット モードでの実行を許可する」をオンにしない限り遮断されず、バッジにも出ない。許可しないと決めている人にも `!` が出続けるので、バッジでは知らせず README に書いた
+      - 許可しても、シークレットのタブでは警告ページを開けない（拡張機能は既定の `spanning` モードで、Chrome はそのページをシークレットのタブに読み込まない）。作者が実際の Chrome で確かめたところ、IDN ホストは止まり、Chrome の `ERR_BLOCKED_BY_CLIENT` の画面が出た。`split` モードにはせず、README に書いた（PR #7 のレビューで見つかった）
     - `ensureProtection` を `createProtector` で1回ずつ順に走らせる。サイトへのアクセスを素早く切り替えると、並行した確認が終わった順にバッジを上書きし、古い結果が残ることがあった
     - 文字種は `Script` で決まらなければ `Script_Extensions` で決める。`ー`（U+30FC）は `Common` なので「その他」になっていた。`ー` はカタカナとひらがなの両方に属するので、`DETECTED_SCRIPTS` でカタカナを先にした
-    - 警告ページの「アドレス」欄からパスワードを除く（`hidePassword`）。ユーザー名は、そこにある `xn--` が遮断の理由になりうる（既知の誤検知）ので残す
+    - 警告ページの「アドレス」欄からパスワードを除く（`hidePassword`）。ユーザー名は、そこにある `xn--` が遮断の理由になりうる（既知の誤検知）ので残す。パスワードがあるときは、`history.replaceState` で警告ページ自身の URL（アドレスバーに出る）からも除く（PR #7 のレビューで見つかった）
     - `gh release upload` に `--clobber` を付け、失敗した `attach-zip` を再実行できるようにした
   - 直さなかった LOW
     - `ci.yml` のアクションはタグ参照のまま（テンプレートの管理下で、トークンは読み取りだけ。Phase 5 の結果を参照）

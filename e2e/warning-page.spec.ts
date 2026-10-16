@@ -20,6 +20,22 @@ test("shows the original URL, both forms of the host and each non-ASCII characte
   await expect(rows.nth(4).locator("td")).toHaveText(["ө", /Cyrillic|キリル文字/u, "U+04E9"]);
 });
 
+// The address bar shows the warning page's own URL, so the password must go from there too.
+test("drops a password from the original URL, on the page and in the address bar", async ({
+  extension,
+  server,
+}) => {
+  const page = await extension.context.newPage();
+  await page.goto(server.idnUrl("/login").replace("://", "://user:secret@"));
+
+  await expect(page.locator("#original-url")).toHaveText(
+    server.idnUrl("/login").replace("://", "://user@"),
+  );
+  expect(page.url()).toBe(
+    `${extension.warningPageUrl}#${server.idnUrl("/login").replace("://", "://user@")}`,
+  );
+});
+
 // Chrome cuts location.hash at the first ":~:" (a fragment directive).
 for (const path of ["/a:~:b", "/page#:~:text=hello", "/page?q=1#frag:~:text=x"]) {
   test(`keeps ":~:" in the original URL (${path})`, async ({ extension, server }) => {
