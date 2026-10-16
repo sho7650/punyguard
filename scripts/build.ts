@@ -15,6 +15,7 @@ const STATIC_FILES = [
   { from: "src/blocked.html", to: "blocked.html" },
   { from: "src/blocked.css", to: "blocked.css" },
   { from: "_locales", to: "_locales" },
+  { from: "icons", to: "icons" },
 ] as const;
 
 const buildOptions: esbuild.BuildOptions = {
