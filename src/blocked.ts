@@ -1,7 +1,7 @@
 // Fills in the warning page. The fragment is untrusted: any page can open blocked.html with
 // a fragment of its choice, so everything from it is written with textContent and the
 // original URL is never turned into a link.
-import { parseBlockedUrl } from "./core/blocked-url.ts";
+import { hidePassword, parseBlockedUrl } from "./core/blocked-url.ts";
 import { describeHost, type HostCharacter } from "./core/host-description.ts";
 
 function requireElement<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -93,6 +93,12 @@ const blockedUrl = parseBlockedUrl(blockedFragment());
 if (blockedUrl === null) {
   requireElement("unreadable", HTMLElement).hidden = false;
 } else {
-  showDetails(blockedUrl.href, blockedUrl.hostname);
+  const shownUrl = hidePassword(blockedUrl.href);
+  // The address bar shows this page's own URL, with the original URL in the fragment.
+  // Only rewritten when there is a password, so ":~:" in other URLs is left alone.
+  if (blockedUrl.password !== "") {
+    history.replaceState(history.state, "", `#${shownUrl}`);
+  }
+  showDetails(shownUrl, blockedUrl.hostname);
 }
 showActions();

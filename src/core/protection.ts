@@ -57,3 +57,17 @@ export async function ensureProtection(deps: ProtectionDeps): Promise<void> {
     [deps.getMessage("actionTitle"), ...problems.map((key) => deps.getMessage(key))].join("\n"),
   );
 }
+
+// Chrome can fire several events close together (site access switched back and forth), and
+// overlapping checks would set the badge in whichever order they finish. Queuing them makes
+// the badge show the latest check. A failed run does not stop the ones after it.
+export function createProtector(deps: ProtectionDeps): () => Promise<void> {
+  let previous: Promise<void> = Promise.resolve();
+  return () => {
+    const run = previous.then(() => ensureProtection(deps));
+    previous = run.catch(() => {
+      // The caller of this run gets the error; the queue only waits for it to settle.
+    });
+    return run;
+  };
+}

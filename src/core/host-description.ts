@@ -19,8 +19,9 @@ const DETECTED_SCRIPTS = [
   "Greek",
   "Armenian",
   "Han",
-  "Hiragana",
+  // Before Hiragana: the shared long vowel mark ー is mostly written in Katakana words.
   "Katakana",
+  "Hiragana",
   "Hangul",
   "Arabic",
   "Hebrew",
@@ -31,13 +32,18 @@ const OTHER_SCRIPT = "Other";
 // Every script name describeHost can report; the warning page shows each as script<Name>.
 export const SCRIPT_NAMES: readonly string[] = [...DETECTED_SCRIPTS, OTHER_SCRIPT];
 
-const SCRIPTS = DETECTED_SCRIPTS.map((name) => ({
-  name,
-  pattern: new RegExp(String.raw`\p{Script=${name}}`, "u"),
-}));
+// A character's own script first. Characters such as ー belong to the Common script but are
+// used only in some scripts (Script_Extensions), so those are tried next; the first match in
+// DETECTED_SCRIPTS wins.
+const SCRIPT_PATTERNS = (["Script", "Script_Extensions"] as const).flatMap((property) =>
+  DETECTED_SCRIPTS.map((name) => ({
+    name,
+    pattern: new RegExp(String.raw`\p{${property}=${name}}`, "u"),
+  })),
+);
 
 function scriptOf(character: string): string {
-  for (const { name, pattern } of SCRIPTS) {
+  for (const { name, pattern } of SCRIPT_PATTERNS) {
     if (pattern.test(character)) {
       return name;
     }

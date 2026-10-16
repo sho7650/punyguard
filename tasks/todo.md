@@ -254,15 +254,31 @@ e2e/                     Playwright
 
 ## Phase 6: 仕上げの検証
 
-- [ ] `pnpm run check`（型チェック、lint、format、カバレッジ 80% 以上）と `pnpm run test:e2e`
-- [ ] 実際の Chrome で受け入れ基準を手で一通り確かめる。E2E で確かめられない次の4点は特に手で確かめる
-  - [ ] 外部アプリから開いたリンク（`open -a "Google Chrome" "https://аррӏө.com/"`）
-  - [ ] macOS で Chrome の表示言語を日本語と英語に切り替えたときの文言
-  - [ ] 拡張機能画面でサイトへのアクセスを「クリック時」に変えるとバッジに `!` が出て、「すべてのサイト」に戻すと消えること
-  - [ ] ブラウザの再起動（`onStartup`）でルールが登録し直されること: 拡張機能画面から「パッケージ化されていない拡張機能を読み込む」で入れ、service worker の DevTools で `chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [1] })` を実行してから Chrome を終了して起動し直し、`аррӏө.com` が遮断されることを確かめる。E2E の `--load-extension` は起動のたびに拡張機能を入れ直すので、再起動では `onInstalled`（reason `install`）が発火し、`onStartup` は発火しない
-- [ ] code-reviewer と security-reviewer のエージェントでレビューし、CRITICAL と HIGH を解消する
-- [ ] Release PR をマージし、v0.1.0 の Release と zip ができ、`package.json` と `manifest.json` が `0.1.0` に上がっていることを確かめる
-- [ ] `release-please-config.json` から `"release-as": "0.1.0"` を外す（残すと、次の Release PR も 0.1.0 を提案し続ける）
+- [x] `pnpm run check`（型チェック、lint、format、カバレッジ 80% 以上）と `pnpm run test:e2e`
+- [x] 実際の Chrome で受け入れ基準を手で一通り確かめる。E2E で確かめられない次の4点は特に手で確かめる
+  - [x] 外部アプリから開いたリンク（`open -a "Google Chrome" "https://аррӏө.com/"`）
+  - [x] macOS で Chrome の表示言語を日本語と英語に切り替えたときの文言
+  - [x] 拡張機能画面でサイトへのアクセスを「クリック時」に変えるとバッジに `!` が出て、「すべてのサイト」に戻すと消えること
+  - [x] ブラウザの再起動（`onStartup`）でルールが登録し直されること: 拡張機能画面から「パッケージ化されていない拡張機能を読み込む」で入れ、service worker の DevTools で `chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [1] })` を実行してから Chrome を終了して起動し直し、`аррӏө.com` が遮断されることを確かめる。E2E の `--load-extension` は起動のたびに拡張機能を入れ直すので、再起動では `onInstalled`（reason `install`）が発火し、`onStartup` は発火しない
+- [x] code-reviewer と security-reviewer のエージェントでレビューし、CRITICAL と HIGH を解消する
+- [x] Release PR をマージし、v0.1.0 の Release と zip ができ、`package.json` と `manifest.json` が `0.1.0` に上がっていることを確かめる
+- [x] `release-please-config.json` から `"release-as": "0.1.0"` を外す（残すと、次の Release PR も 0.1.0 を提案し続ける）
+- 結果（2026-10-16）
+  - v0.1.0 の Release に `punyguard-v0.1.0.zip`（18 エントリ、`manifest.json` は最上位で `0.1.0`）が添付された。手での確認は作者が行い、4点とも期待どおりだった
+  - Release PR は `GITHUB_TOKEN` が作るので、CI はリポジトリの画面で承認するまで走らない（`action_required`）。release-please が書き換える `CHANGELOG.md`、`.release-please-manifest.json`、`manifest.json` は oxfmt の対象から外した（`docs/decisions.md` の P2、PR #6）
+  - レビューでは CRITICAL と HIGH はなかった。MEDIUM と、手間の小さい LOW を直した
+    - シークレット ウィンドウでは、作者が「シークレット モードでの実行を許可する」をオンにしない限り遮断されず、バッジにも出ない。許可しないと決めている人にも `!` が出続けるので、バッジでは知らせず README に書いた
+      - 許可しても、シークレットのタブでは警告ページを開けない（拡張機能は既定の `spanning` モードで、Chrome はそのページをシークレットのタブに読み込まない）。作者が実際の Chrome で確かめたところ、IDN ホストは止まり、Chrome の `ERR_BLOCKED_BY_CLIENT` の画面が出た。`split` モードにはせず、README に書いた（PR #7 のレビューで見つかった）
+      - このときアドレスバーの `blocked.html#` の後ろには、元の URL がパスワードごと残る（警告ページが動かないので消せない）。遮断ルールの `regexSubstitution` でパスワードを捨てる案は、RE2 では正規表現がかなり複雑になり、ユーザー名に `xn--` がある誤検知の URL ではそれでも残るので見送り、README に書いた。シークレットのページの中の iframe では、Chromium は拡張機能のページを読み込めるので、警告ページが出ることがある（実際には確かめていない）
+    - `ensureProtection` を `createProtector` で1回ずつ順に走らせる。サイトへのアクセスを素早く切り替えると、並行した確認が終わった順にバッジを上書きし、古い結果が残ることがあった
+    - 文字種は `Script` で決まらなければ `Script_Extensions` で決める。`ー`（U+30FC）は `Common` なので「その他」になっていた。`ー` はカタカナとひらがなの両方に属するので、`DETECTED_SCRIPTS` でカタカナを先にした
+    - 警告ページの「アドレス」欄からパスワードを除く（`hidePassword`）。ユーザー名は、そこにある `xn--` が遮断の理由になりうる（既知の誤検知）ので残す。パスワードがあるときは、`history.replaceState` で警告ページ自身の URL（アドレスバーに出る）からも除く（PR #7 のレビューで見つかった）
+    - `gh release upload` に `--clobber` を付け、失敗した `attach-zip` を再実行できるようにした
+  - 直さなかった LOW
+    - `ci.yml` のアクションはタグ参照のまま（テンプレートの管理下で、トークンは読み取りだけ。Phase 5 の結果を参照）
+    - 誰でも `blocked.html` を任意のフラグメント付きで開いて、偽の警告を出せる。`xn--` を含む URL に限っても偽の警告は出せるので、防ぐ効果が小さい
+    - 外部のページから拡張機能の有無を調べられる。転送先を web_accessible_resources にしている以上避けられない（ADR-0002）
+    - zip のチェックサムやビルドの証明（attestation）は、個人で配る拡張機能としては見送る
 
 ## リスクと未確認事項
 
