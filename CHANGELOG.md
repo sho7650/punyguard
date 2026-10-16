@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.1](https://github.com/sho7650/punyguard/compare/v0.1.0...v0.1.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* drop the password from the address bar and note incognito limits ([5f8531a](https://github.com/sho7650/punyguard/commit/5f8531af64833604b1314c6c9f6ce5807225c2e2))
+* serialize protection checks, hide passwords and document incognito ([e2b98e4](https://github.com/sho7650/punyguard/commit/e2b98e44f6261edfdd0284ad34e3ce1c4eda5aaf))
+* serialize protection checks, hide passwords and document incognito ([8a1bef3](https://github.com/sho7650/punyguard/commit/8a1bef3fb521620f1049727ef32ff57509561197))
+
 ## 0.1.0 (2026-10-16)
 
 
