@@ -13,7 +13,7 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     coverage: {
       provider: "v8",
-      include: ["src"],
+      include: ["src/**/*.ts"],
       // Thin entry points that touch browser APIs; covered by the E2E tests
       exclude: ["src/**/*.test.ts", "src/background.ts", "src/blocked.ts"],
       // Enforced from day one to keep tests first (D9)

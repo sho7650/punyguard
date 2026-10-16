@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="pageTitle">PunyGuard</title>
+    <link rel="stylesheet" href="blocked.css" />
+  </head>
+  <body>
+    <main>
+      <!--
+        The bilingual text below must work without blocked.js: in a sandboxed iframe without
+        allow-scripts the script never runs. When it does run, it swaps in the text for the
+        browser's language and reveals the hidden parts.
+      -->
+      <h1 data-i18n="heading">
+        <span lang="ja">PunyGuard がこのページへの移動を止めました</span>
+        <span lang="en">PunyGuard blocked this page</span>
+      </h1>
+      <p data-i18n="explanation">
+        <span lang="ja"
+          >このページのアドレスには国際化ドメイン名（IDN）が使われています。PunyGuard は、IDN
+          のホストへの移動をすべて止める拡張機能です。</span
+        >
+        <span lang="en"
+          >This page's address uses an internationalized domain name (IDN). PunyGuard is an
+          extension that blocks every IDN host.</span
+        >
+      </p>
+
+      <p id="unreadable" data-i18n="unreadableUrl" hidden></p>
+
+      <section id="details" hidden>
+        <dl>
+          <dt data-i18n="labelOriginalUrl"></dt>
+          <dd id="original-url" class="code"></dd>
+          <dt data-i18n="labelUnicode"></dt>
+          <dd id="unicode-host" class="code"></dd>
+          <dt data-i18n="labelPunycode"></dt>
+          <dd id="punycode-host" class="code"></dd>
+        </dl>
+        <h2 data-i18n="headingCharacters"></h2>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col" data-i18n="columnCharacter"></th>
+                <th scope="col" data-i18n="columnScript"></th>
+                <th scope="col" data-i18n="columnCodePoint"></th>
+              </tr>
+            </thead>
+            <tbody id="characters"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div id="actions" class="actions" hidden>
+        <button id="close-tab" type="button" class="primary" data-i18n="closeTab"></button>
+        <button id="go-back" type="button" data-i18n="goBack" hidden></button>
+      </div>
+    </main>
+    <script src="blocked.js"></script>
+  </body>
+</html>
