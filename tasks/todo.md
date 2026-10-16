@@ -167,6 +167,7 @@ e2e/                     Playwright
   - [x] `xn--80a6aa68c8d.com` → `аррӏө.com`、`ө` は Cyrillic の U+04E9
   - [x] ラテン文字とキリル文字が混在するラベル、日本語のラベル、不正な Punycode（デコードに失敗したら Punycode 表記のまま返す）
 - [x] `_locales/ja/messages.json` と `_locales/en/messages.json` のキーが一致することを確かめるテスト（言語の切り替えそのものは E2E で確かめる）
+  - （追加、PR #3 のレビューで見つかった）コードが使うキー（`protection.ts` の `PROTECTION_MESSAGE_KEYS`、`blocked.html` の `data-i18n`、`host-description.ts` の `SCRIPT_NAMES` から作る `script<Name>`）が、両方のカタログに空でない文言として入っていることも確かめる。`getMessage` はないキーに空文字を返すので、キーが消えても見た目が空になるだけで気づけない
 
 ## Phase 3: 拡張機能本体
 

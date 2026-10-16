@@ -1,7 +1,14 @@
 import { buildBlockRule } from "./block-rule.ts";
 
-type ProblemMessageKey = "problemRuleNotRegistered" | "problemNoSiteAccess";
-type ProtectionMessageKey = "actionTitle" | ProblemMessageKey;
+// Every message key ensureProtection looks up; src/locales.test.ts checks that both catalogs
+// define them.
+export const PROTECTION_MESSAGE_KEYS = [
+  "actionTitle",
+  "problemRuleNotRegistered",
+  "problemNoSiteAccess",
+] as const;
+type ProtectionMessageKey = (typeof PROTECTION_MESSAGE_KEYS)[number];
+type ProblemMessageKey = Exclude<ProtectionMessageKey, "actionTitle">;
 
 // The browser APIs that ensureProtection needs, passed in so that tests can stand in for them.
 export interface ProtectionDeps {
