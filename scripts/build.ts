@@ -1,22 +1,43 @@
 // Builds the unpacked extension into dist/.
 // Usage: node scripts/build.ts [--watch]
-import { statSync, watch } from "node:fs";
+import { readdirSync, statSync, watch } from "node:fs";
 import { cp, rm } from "node:fs/promises";
 import path from "node:path";
 import * as esbuild from "esbuild";
+import packageJson from "../package.json" with { type: "json" };
 
 const OUT_DIR = "dist";
 
 const ENTRY_POINTS = ["src/background.ts", "src/blocked.ts"];
 
+interface StaticFile {
+  readonly from: string;
+  readonly to: string;
+}
+
+// Runtime dependencies end up inside the bundled scripts, so their license notices have to
+// ship in dist/ (and the Release zip) too.
+function dependencyLicenses(): StaticFile[] {
+  return Object.keys(packageJson.dependencies).map((name) => {
+    const directory = `node_modules/${name}`;
+    const license = readdirSync(directory).find((file) => /^licen[cs]e/iu.test(file));
+    if (license === undefined) {
+      throw new Error(`No license file for the dependency ${name} in ${directory}`);
+    }
+    return { from: `${directory}/${license}`, to: `licenses/${name}.txt` };
+  });
+}
+
 // Files that are not bundled and are copied into dist/ as they are.
-const STATIC_FILES = [
+const STATIC_FILES: readonly StaticFile[] = [
   { from: "manifest.json", to: "manifest.json" },
   { from: "src/blocked.html", to: "blocked.html" },
   { from: "src/blocked.css", to: "blocked.css" },
   { from: "_locales", to: "_locales" },
   { from: "icons", to: "icons" },
-] as const;
+  { from: "LICENSE", to: "LICENSE" },
+  ...dependencyLicenses(),
+];
 
 const buildOptions: esbuild.BuildOptions = {
   entryPoints: ENTRY_POINTS,
@@ -30,8 +51,6 @@ const buildOptions: esbuild.BuildOptions = {
   minify: false,
   logLevel: "info",
 };
-
-type StaticFile = (typeof STATIC_FILES)[number];
 
 async function copyStaticFile({ from, to }: StaticFile): Promise<void> {
   await cp(from, `${OUT_DIR}/${to}`, { recursive: true });

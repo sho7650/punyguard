@@ -229,7 +229,7 @@ e2e/                     Playwright
     - ワークフローの `permissions` に `contents: write`（Release の作成と zip の添付）、`pull-requests: write`（Release PR の作成と更新）、`issues: write`（ラベルの作成と付与）を書く
     - `gh release upload` には `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` を渡す
     - トークンは `GITHUB_TOKEN` を使う。`GITHUB_TOKEN` が作った PR では他のワークフローが起動しないので、Release PR では CI が走らない。Release PR が変えるのはバージョン番号と CHANGELOG だけなので、個人のリポジトリとしては許容する。CI を走らせたくなったら、fine-grained PAT を secret に登録して `token` に渡す
-  - [ ] リポジトリの Settings → Actions → General で、「Workflow permissions」を「Read and write permissions」にし、「Allow GitHub Actions to create and approve pull requests」を有効にする（作者が手で設定する）
+  - [x] リポジトリの Settings → Actions → General で、「Workflow permissions」を「Read and write permissions」にし、「Allow GitHub Actions to create and approve pull requests」を有効にする（作者が手で設定する）
 - [x] 拡張機能のアイコン（16、32、48、128 px）を作り、`manifest.json` の `icons` と `action.default_icon` に設定する（Phase 3 の時点では未設定で、Chrome の既定のアイコンが出ている）
 - [x] `LICENSE`（MIT）
 - [x] `README.md`（日本語と英語）
@@ -245,6 +245,11 @@ e2e/                     Playwright
   - リポジトリの設定は、2026-10-16 の時点で `default_workflow_permissions: read`、`can_approve_pull_request_reviews: false`。ワークフローの `permissions` で書き込み権限は得られるが、Release PR を作るには「Allow GitHub Actions to create and approve pull requests」を有効にする必要がある
   - アイコンは盾に進入禁止の印。元の SVG は `assets/icon.svg` に置き、`pnpm run icons`（`scripts/icons.ts`）が Playwright の Chromium で `icons/icon-{16,32,48,128}.png` に描き出す。警告ページの favicon にも使う
   - `LICENSE` はテンプレートの MIT のまま
+  - PR #4 のレビューで見つかって直したこと
+    - `attach-zip` は、起動した push のコミットではなく、タグのコミット（`ref: tag_name`）をビルドする。Release の作成が後の push で再試行されると、タグと zip の中身がずれるため
+    - `release.yml` は書き込みできるトークンを持つので、ワークフロー全体は `permissions: {}` にして、ジョブごとに必要な権限だけを与える。アクションはコミットの SHA で固定し、`attach-zip` の checkout は `persist-credentials: false` にする。`ci.yml` は読み取りだけで、テンプレートの管理下なので、タグの参照のままにする
+    - `punycode` はバンドルされて配布物に入るので、MIT の告知を同梱する。`scripts/build.ts` が、`LICENSE` と、`package.json` の `dependencies` ごとのライセンスファイル（`licenses/<名前>.txt`）を `dist/` にコピーする
+  - リポジトリの設定は 2026-10-16 に作者が変更した（`default_workflow_permissions: write`、`can_approve_pull_request_reviews: true`）
   - README は英語の `README.md`（開発の手順を含む）と日本語の `README.ja.md` に分けた
 
 ## Phase 6: 仕上げの検証
