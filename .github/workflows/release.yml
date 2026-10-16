@@ -51,8 +51,9 @@ jobs:
         run: cd dist && zip -r "../punyguard-${TAG}.zip" .
         env:
           TAG: ${{ needs.release-please.outputs.tag_name }}
+      # --clobber: re-running a failed job replaces a zip an earlier attempt already uploaded.
       - name: Attach the zip to the Release
-        run: gh release upload "$TAG" "punyguard-${TAG}.zip" --repo "$GITHUB_REPOSITORY"
+        run: gh release upload "$TAG" "punyguard-${TAG}.zip" --clobber --repo "$GITHUB_REPOSITORY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.release-please.outputs.tag_name }}

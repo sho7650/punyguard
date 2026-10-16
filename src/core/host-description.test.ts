@@ -66,6 +66,18 @@ describe("describeHost: scripts", () => {
     );
   });
 
+  test("names the long vowel mark ー by the scripts it is used in, not as Other", () => {
+    const description = describeHost("xn--tck2c4fb.jp");
+
+    expect(description.unicode).toBe("コーヒー.jp");
+    expect(description.characters.slice(0, 4).map(({ script }) => script)).toEqual([
+      "Katakana",
+      "Katakana",
+      "Katakana",
+      "Katakana",
+    ]);
+  });
+
   // Real IDN TLDs: IANA's test TLDs and delegated ones.
   test.each([
     { label: "xn--hxajbheg2az3al", unicode: "παράδειγμα", script: "Greek" },

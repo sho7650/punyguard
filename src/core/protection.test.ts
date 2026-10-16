@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { buildBlockRule } from "./block-rule.ts";
-import { ensureProtection, type ProtectionDeps } from "./protection.ts";
+import { createProtector, ensureProtection, type ProtectionDeps } from "./protection.ts";
 
 const WARNING_PAGE = "chrome-extension://abcdefghijklmnop/blocked.html";
 
@@ -111,5 +111,53 @@ describe("ensureProtection when protection is off", () => {
     expect(calls.errors).toEqual([
       { message: "Failed to check site access", error: new Error("Permission check failed") },
     ]);
+  });
+});
+
+describe("createProtector", () => {
+  test("runs one check at a time, so the badge shows the result of the latest check", async () => {
+    const { deps, calls } = createFakeBrowser();
+    // The first check (site access restricted) answers only after the second one has been asked for.
+    const answers = [Promise.withResolvers<boolean>(), Promise.withResolvers<boolean>()];
+    let checks = 0;
+    const protect = createProtector({
+      ...deps,
+      containsOrigins: (origins) => {
+        calls.originChecks.push(origins);
+        const answer = answers[checks];
+        checks += 1;
+        return answer === undefined ? Promise.resolve(true) : answer.promise;
+      },
+    });
+
+    const first = protect();
+    const second = protect();
+    answers[1]?.resolve(true);
+    // Let any run that is not waiting on the first check finish before the first one answers.
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+    answers[0]?.resolve(false);
+    await Promise.all([first, second]);
+
+    expect(calls.badgeTexts).toEqual(["!", ""]);
+  });
+
+  test("keeps running checks after one of them throws", async () => {
+    const { deps, calls } = createFakeBrowser();
+    let badgeUpdates = 0;
+    const protect = createProtector({
+      ...deps,
+      setBadgeText: (text) => {
+        badgeUpdates += 1;
+        calls.badgeTexts.push(text);
+        return badgeUpdates === 1 ? Promise.reject(new Error("No tab")) : Promise.resolve();
+      },
+    });
+
+    await expect(protect()).rejects.toThrow("No tab");
+    await protect();
+
+    expect(calls.badgeTexts).toEqual(["", ""]);
   });
 });

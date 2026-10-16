@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseBlockedUrl } from "./blocked-url.ts";
+import { hidePassword, parseBlockedUrl } from "./blocked-url.ts";
 
 describe("parseBlockedUrl", () => {
   test("reads the original URL from the warning page's fragment", () => {
@@ -24,5 +24,19 @@ describe("parseBlockedUrl", () => {
     { name: "a chrome-extension: URL", hash: "#chrome-extension://abcdefghijklmnop/blocked.html" },
   ] as const)("returns null for $name", ({ hash }) => {
     expect(parseBlockedUrl(hash)).toBeNull();
+  });
+});
+
+describe("hidePassword", () => {
+  test("drops the password and keeps the user name, which can hold the xn-- that was blocked", () => {
+    expect(hidePassword("https://xn--a:secret@xn--80a6aa68c8d.com/login")).toBe(
+      "https://xn--a@xn--80a6aa68c8d.com/login",
+    );
+  });
+
+  test("leaves a URL without a password as it is", () => {
+    expect(hidePassword("https://xn--80a6aa68c8d.com/a?b#c")).toBe(
+      "https://xn--80a6aa68c8d.com/a?b#c",
+    );
   });
 });

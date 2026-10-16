@@ -19,7 +19,7 @@ Any check based on how similar letters look can miss a character like this. Puny
 | Clicks, typed addresses, redirects and links opened from other apps |                                                                          |
 
 - **Legitimate IDNs are blocked too**, such as Japanese domains like `日本語.jp`. There is no allowlist and no way to continue to the page ([ADR-0001](docs/adr/0001-block-all-idn-hosts.md)).
-- The warning page shows the original URL (as text, not a link), the host in Unicode and Punycode, and each non-ASCII character with its script and code point. It is in Japanese when Chrome's language is Japanese, and in English otherwise.
+- The warning page shows the original URL (as text, not a link, and without any password in it), the host in Unicode and Punycode, and each non-ASCII character with its script and code point. It is in Japanese when Chrome's language is Japanese, and in English otherwise.
 - Known false positive: a URL with `xn--` in its user info, such as `https://xn--a@example.com/`, is blocked.
 
 ## Install
@@ -29,6 +29,7 @@ PunyGuard is distributed on GitHub only, not in the Chrome Web Store.
 1. Download `punyguard-vX.Y.Z.zip` from [Releases](https://github.com/sho7650/punyguard/releases) and unzip it into a folder you will keep. Chrome loads the extension from that folder.
 2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the folder.
 3. Leave **Site access** at **On all sites** (see below).
+4. To be protected in Incognito windows too, turn on **Allow in Incognito** (see below).
 
 To update, replace the folder's contents with the new release and click the reload button on the extension's card.
 
@@ -46,6 +47,12 @@ PunyGuard has no content scripts, sends nothing over the network and stores noth
 ### Keep site access at "On all sites"
 
 If you limit **Site access** in `chrome://extensions` to **On click** or to specific sites, the redirect stops working and IDN hosts are no longer blocked. PunyGuard notices this and shows a `!` badge on its toolbar icon.
+
+### Incognito windows
+
+Chrome does not run extensions in Incognito windows unless you turn on **Allow in Incognito** on the extension's details page in `chrome://extensions`. Until then, **IDN hosts are not blocked in Incognito windows**, and the `!` badge does not tell you so.
+
+Allowing it does not give PunyGuard anything to read: it only has Chrome apply the same rule there, and it still sends and stores nothing.
 
 ### The `!` badge
 
