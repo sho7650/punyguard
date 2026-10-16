@@ -218,27 +218,39 @@ e2e/                     Playwright
 
 ## Phase 5: CI、リリース、ドキュメント
 
-- [ ] CI に E2E のジョブを追加する。ジョブは `pnpm install --frozen-lockfile`、Playwright の Chromium のインストール、`pnpm run test:e2e`（ビルドを含む）の順に実行する（Nix で動かすのが難しければ、そのジョブだけ Nix を使わずに `actions/setup-node`（`node-version: 26`）、`pnpm/action-setup`（テンプレートの `devEngines` と同じ pnpm `^12.3`）、`pnpm exec playwright install --with-deps chromium` を使う。Playwright はプロジェクトのローカル依存なので、`playwright` を直接呼ばず、必ず `pnpm exec` を付ける。テンプレートの `devEngines` は Node と pnpm のバージョンが合わないとエラーで止まるので、バージョンを必ず明示する）
-- [ ] release-please を導入する
-  - [ ] `release-please-config.json`: `release-type: "node"`、`bump-minor-pre-major: true`、`extra-files` に `{ "type": "json", "path": "manifest.json", "jsonpath": "$.version" }`
-  - [ ] `.release-please-manifest.json`: `{ ".": "0.0.0" }`。マニフェストの値は「直近にリリースしたバージョン」として扱われるので、まだリリースしていない状態を表す `0.0.0` にする。`package.json` も `0.0.0` にする
-  - [ ] `manifest.json` の `version` はリリース前は `0.0.1` にする。Chrome は全要素が 0 のバージョンを無効として扱い、`0.0.0` では拡張機能を読み込めない。`extra-files` は Release のときにこの値を新しいバージョンで上書きするので、release-please の管理値と一致していなくても問題ない
-  - [ ] 初回を `0.1.0` に固定するため、`release-please-config.json` のパッケージ設定に `"release-as": "0.1.0"` を入れる（初回のリリース後に外す。Phase 6 を参照）
-  - [ ] `.github/workflows/release.yml`: release-please-action を動かし、Release が作られたら `pnpm run build` を実行して `dist/` を `punyguard-vX.Y.Z.zip` にまとめ、`gh release upload` で添付する
+- [x] CI に E2E のジョブを追加する。ジョブは `pnpm install --frozen-lockfile`、Playwright の Chromium のインストール、`pnpm run test:e2e`（ビルドを含む）の順に実行する（Nix で動かすのが難しければ、そのジョブだけ Nix を使わずに `actions/setup-node`（`node-version: 26`）、`pnpm/action-setup`（テンプレートの `devEngines` と同じ pnpm `^12.3`）、`pnpm exec playwright install --with-deps chromium` を使う。Playwright はプロジェクトのローカル依存なので、`playwright` を直接呼ばず、必ず `pnpm exec` を付ける。テンプレートの `devEngines` は Node と pnpm のバージョンが合わないとエラーで止まるので、バージョンを必ず明示する）
+- [x] release-please を導入する
+  - [x] `release-please-config.json`: `release-type: "node"`、`bump-minor-pre-major: true`、`extra-files` に `{ "type": "json", "path": "manifest.json", "jsonpath": "$.version" }`
+  - [x] `.release-please-manifest.json`: `{ ".": "0.0.0" }`。マニフェストの値は「直近にリリースしたバージョン」として扱われるので、まだリリースしていない状態を表す `0.0.0` にする。`package.json` も `0.0.0` にする
+  - [x] `manifest.json` の `version` はリリース前は `0.0.1` にする。Chrome は全要素が 0 のバージョンを無効として扱い、`0.0.0` では拡張機能を読み込めない。`extra-files` は Release のときにこの値を新しいバージョンで上書きするので、release-please の管理値と一致していなくても問題ない
+  - [x] 初回を `0.1.0` に固定するため、`release-please-config.json` のパッケージ設定に `"release-as": "0.1.0"` を入れる（初回のリリース後に外す。Phase 6 を参照）
+  - [x] `.github/workflows/release.yml`: release-please-action を動かし、Release が作られたら `pnpm run build` を実行して `dist/` を `punyguard-vX.Y.Z.zip` にまとめ、`gh release upload` で添付する
     - ビルド環境は CI と同じ Nix の devShell にする（Node と pnpm のバージョンがテンプレートの `devEngines` と一致する）。Nix を使えない場合は、E2E のジョブと同じく Node 26 と pnpm `^12.3` を明示する
     - ワークフローの `permissions` に `contents: write`（Release の作成と zip の添付）、`pull-requests: write`（Release PR の作成と更新）、`issues: write`（ラベルの作成と付与）を書く
     - `gh release upload` には `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` を渡す
     - トークンは `GITHUB_TOKEN` を使う。`GITHUB_TOKEN` が作った PR では他のワークフローが起動しないので、Release PR では CI が走らない。Release PR が変えるのはバージョン番号と CHANGELOG だけなので、個人のリポジトリとしては許容する。CI を走らせたくなったら、fine-grained PAT を secret に登録して `token` に渡す
-  - [ ] リポジトリの Settings → Actions → General で、「Workflow permissions」を「Read and write permissions」にし、「Allow GitHub Actions to create and approve pull requests」を有効にする（作者が手で設定する）
-- [ ] 拡張機能のアイコン（16、32、48、128 px）を作り、`manifest.json` の `icons` と `action.default_icon` に設定する（Phase 3 の時点では未設定で、Chrome の既定のアイコンが出ている）
-- [ ] `LICENSE`（MIT）
-- [ ] `README.md`（日本語と英語）
-  - [ ] 何をする拡張機能か、記事の例
-  - [ ] 正規の日本語ドメインも止まること（ADR-0001）
-  - [ ] `<all_urls>` を要求する理由と、content script も外部通信もないこと（ADR-0002）
-  - [ ] サイトへのアクセスは「すべてのサイト」のままにすること。制限すると遮断が効かなくなり、バッジに `!` が出ること
-  - [ ] バッジの `!` の意味と、ツールチップで原因を確かめる方法
-  - [ ] Release の zip から入れる手順と、ソースからビルドする手順
+  - [x] リポジトリの Settings → Actions → General で、「Workflow permissions」を「Read and write permissions」にし、「Allow GitHub Actions to create and approve pull requests」を有効にする（作者が手で設定する）
+- [x] 拡張機能のアイコン（16、32、48、128 px）を作り、`manifest.json` の `icons` と `action.default_icon` に設定する（Phase 3 の時点では未設定で、Chrome の既定のアイコンが出ている）
+- [x] `LICENSE`（MIT）
+- [x] `README.md`（日本語と英語）
+  - [x] 何をする拡張機能か、記事の例
+  - [x] 正規の日本語ドメインも止まること（ADR-0001）
+  - [x] `<all_urls>` を要求する理由と、content script も外部通信もないこと（ADR-0002）
+  - [x] サイトへのアクセスは「すべてのサイト」のままにすること。制限すると遮断が効かなくなり、バッジに `!` が出ること
+  - [x] バッジの `!` の意味と、ツールチップで原因を確かめる方法
+  - [x] Release の zip から入れる手順と、ソースからビルドする手順
+- 結果（2026-10-16）
+  - CI の `e2e` ジョブは Nix の devShell で動かす（`nix develop --command pnpm exec playwright install --with-deps chromium`）。失敗したときは `playwright-report/` を artifact に残す
+  - release-please-action は v5（v4 からの変更は Node 24 で動くことだけ）。`include-component-in-tag: false` にして、タグを `punyguard-v0.1.0` ではなく `v0.1.0` にする（zip は `punyguard-v0.1.0.zip`）。ワークフローは actionlint で確かめた
+  - リポジトリの設定は、2026-10-16 の時点で `default_workflow_permissions: read`、`can_approve_pull_request_reviews: false`。ワークフローの `permissions` で書き込み権限は得られるが、Release PR を作るには「Allow GitHub Actions to create and approve pull requests」を有効にする必要がある
+  - アイコンは盾に進入禁止の印。元の SVG は `assets/icon.svg` に置き、`pnpm run icons`（`scripts/icons.ts`）が Playwright の Chromium で `icons/icon-{16,32,48,128}.png` に描き出す。警告ページの favicon にも使う
+  - `LICENSE` はテンプレートの MIT のまま
+  - PR #4 のレビューで見つかって直したこと
+    - `attach-zip` は、起動した push のコミットではなく、タグのコミット（`ref: tag_name`）をビルドする。Release の作成が後の push で再試行されると、タグと zip の中身がずれるため
+    - `release.yml` は書き込みできるトークンを持つので、ワークフロー全体は `permissions: {}` にして、ジョブごとに必要な権限だけを与える。アクションはコミットの SHA で固定し、`attach-zip` の checkout は `persist-credentials: false` にする。`ci.yml` は読み取りだけで、テンプレートの管理下なので、タグの参照のままにする
+    - `punycode` はバンドルされて配布物に入るので、MIT の告知を同梱する。`scripts/build.ts` が、`LICENSE` と、`package.json` の `dependencies` ごとのライセンスファイル（`licenses/<名前>.txt`）を `dist/` にコピーする
+  - リポジトリの設定は 2026-10-16 に作者が変更した（`default_workflow_permissions: write`、`can_approve_pull_request_reviews: true`）
+  - README は英語の `README.md`（開発の手順を含む）と日本語の `README.ja.md` に分けた
 
 ## Phase 6: 仕上げの検証
 

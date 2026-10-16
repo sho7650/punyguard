@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# Each job asks for what it needs. Actions are pinned to full commit SHAs because this
+# workflow holds a token that can write to the repository.
+permissions: {}
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the tag and the Release
+      pull-requests: write # open and update the Release PR
+      issues: write # create and apply the release labels
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      # GITHUB_TOKEN: the Release PR it opens does not trigger CI. The PR only changes
+      # version numbers and the CHANGELOG (tasks/todo.md, Phase 5).
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  attach-zip:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # attach the zip to the Release
+    steps:
+      # Build the tagged commit, not the push that triggered this run: a later push can
+      # retry a Release whose tag points at an earlier commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+          persist-credentials: false
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - name: Install dependencies
+        run: nix develop --command pnpm install --frozen-lockfile
+      - name: Build
+        run: nix develop --command pnpm run build
+      # manifest.json sits at the root of the zip, as Chrome expects of an unpacked extension.
+      # dist/ also holds LICENSE and licenses/ for the bundled dependencies.
+      - name: Zip dist/
+        run: cd dist && zip -r "../punyguard-${TAG}.zip" .
+        env:
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+      - name: Attach the zip to the Release
+        run: gh release upload "$TAG" "punyguard-${TAG}.zip" --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}

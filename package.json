@@ -8,6 +8,7 @@
   "scripts": {
     "build": "node scripts/build.ts",
     "build:watch": "node scripts/build.ts --watch",
+    "icons": "node scripts/icons.ts",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
     "test": "vitest",
     "test:run": "vitest run",

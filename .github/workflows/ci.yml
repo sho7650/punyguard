@@ -20,3 +20,24 @@ jobs:
         run: nix develop --command pnpm install --frozen-lockfile
       - name: Run checks
         run: nix develop --command pnpm run check
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - name: Install dependencies
+        run: nix develop --command pnpm install --frozen-lockfile
+      # Chromium comes from Playwright; --with-deps installs its system libraries with apt.
+      - name: Install Chromium
+        run: nix develop --command pnpm exec playwright install --with-deps chromium
+      # Builds dist/ first. On Linux this includes the language tests.
+      - name: Run E2E tests
+        run: nix develop --command pnpm run test:e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
