@@ -4,3 +4,5 @@ coverage/
 result
 .DS_Store
 dist/
+test-results/
+playwright-report/

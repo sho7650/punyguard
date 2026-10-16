@@ -183,27 +183,34 @@ e2e/                     Playwright
 
 ## Phase 4: E2E（Playwright）
 
-- [ ] `@playwright/test` を追加し、`launchPersistentContext` で Chromium を起動する
+- [x] `@playwright/test` を追加し、`launchPersistentContext` で Chromium を起動する
   - `channel: "chromium"` を指定する。拡張機能を読み込めるのは、この新しいヘッドレスモードか、ヘッドありの起動だけで、既定のヘッドレスシェルでは読み込めない
   - 起動引数に `--disable-extensions-except=<dist の絶対パス>` と `--load-extension=<dist の絶対パス>` の両方を指定する
   - `context.serviceWorkers()`（まだなければ `waitForEvent("serviceworker")`）で service worker を取得し、拡張機能 ID と後続の検証に使う
-- [ ] `playwright.config.ts` で `testDir: "e2e"` を指定し、E2E のファイル名は `*.spec.ts` にする。逆に Vitest の設定では `include: ["src/**/*.test.ts"]` を指定する。どちらも既定では `*.test.ts` と `*.spec.ts` の両方を集めるので、指定しないと Playwright が単体テストを、Vitest が E2E を拾って失敗する
-- [ ] テスト用の HTTP サーバーを立て、`--host-resolver-rules` で `xn--80a6aa68c8d.com` などをローカルに向ける
-- [ ] service worker で `getDynamicRules` を呼び、遮断ルールが1本登録されていることと、`action.getBadgeText` が空であることを確かめる
-- [ ] 取り出したルールの `regexFilter` を service worker で `isRegexSupported` に渡し、RE2 で使えることを確かめる
-- [ ] 受け入れ基準を1つずつテストにする
-  - [ ] 直接の遷移、リンクのクリック、302 リダイレクト、iframe（iframe では操作ボタンがないこと）
-  - [ ] `sandbox` 属性付き（`allow-scripts` なし）の iframe: テストサーバーの IDN ホスト用ページへのリクエストが届かず、その中身が表示されないこと。転送された場合は、日英併記の固定の警告文が見え、詳細の欄と操作ボタンが見えないことも確かめる
-  - [ ] 警告ページの表示内容（Unicode 表記、Punycode 表記、`ө` の文字種とコードポイント）
-  - [ ] 元の URL に `:~:` があっても、「アドレス」欄に元の URL がそのまま出る（`/a:~:b`、`#:~:text=hello`、`#frag:~:text=x`）。Chrome は `location.hash` から最初の `:~:` 以降を取り除くので、警告ページは `navigation.currentEntry.url` から読む（PR #2 のレビューで見つかった）
-  - [ ] 操作ボタン: ASCII ホストのページからリンクで警告ページへ来たとき、「前のページに戻る」が表示され、押すと元のページに戻る / 新しいタブの最初のページとして開いたとき、「前のページに戻る」が表示されない / どちらの場合も「このタブを閉じる」でタブが閉じる
-  - [ ] ASCII ホストで日本語のパスを開いても遮断されない
-  - [ ] 言語の切り替え: Linux（CI）では、`launchPersistentContext` の `env` に `LANGUAGE=ja`（または `LANGUAGE=en`）を渡して起動し、文言を確かめる。Linux の Chromium は表示言語を `--lang` ではなく環境変数（`LANGUAGE`、`LC_ALL`、`LC_MESSAGES`、`LANG` の順）から決める。macOS の Chromium は OS のバンドル設定から決めるので、macOS ではこのテストを `test.skip` で飛ばし、Phase 6 の手動確認で補う
+- [x] `playwright.config.ts` で `testDir: "e2e"` を指定し、E2E のファイル名は `*.spec.ts` にする。逆に Vitest の設定では `include: ["src/**/*.test.ts"]` を指定する。どちらも既定では `*.test.ts` と `*.spec.ts` の両方を集めるので、指定しないと Playwright が単体テストを、Vitest が E2E を拾って失敗する
+- [x] テスト用の HTTP サーバーを立て、`--host-resolver-rules` で `xn--80a6aa68c8d.com` などをローカルに向ける
+- [x] service worker で `getDynamicRules` を呼び、遮断ルールが1本登録されていることと、`action.getBadgeText` が空であることを確かめる
+- [x] 取り出したルールの `regexFilter` を service worker で `isRegexSupported` に渡し、RE2 で使えることを確かめる
+- [x] 受け入れ基準を1つずつテストにする
+  - [x] 直接の遷移、リンクのクリック、302 リダイレクト、iframe（iframe では操作ボタンがないこと）
+  - [x] `sandbox` 属性付き（`allow-scripts` なし）の iframe: テストサーバーの IDN ホスト用ページへのリクエストが届かず、その中身が表示されないこと。転送された場合は、日英併記の固定の警告文が見え、詳細の欄と操作ボタンが見えないことも確かめる
+  - [x] 警告ページの表示内容（Unicode 表記、Punycode 表記、`ө` の文字種とコードポイント）
+  - [x] 元の URL に `:~:` があっても、「アドレス」欄に元の URL がそのまま出る（`/a:~:b`、`#:~:text=hello`、`#frag:~:text=x`）。Chrome は `location.hash` から最初の `:~:` 以降を取り除くので、警告ページは `navigation.currentEntry.url` から読む（PR #2 のレビューで見つかった）
+  - [x] 操作ボタン: ASCII ホストのページからリンクで警告ページへ来たとき、「前のページに戻る」が表示され、押すと元のページに戻る / 新しいタブの最初のページとして開いたとき、「前のページに戻る」が表示されない / どちらの場合も「このタブを閉じる」でタブが閉じる
+  - [x] ASCII ホストで日本語のパスを開いても遮断されない
+  - [x] 言語の切り替え: Linux（CI）では、`launchPersistentContext` の `env` に `LANGUAGE=ja`（または `LANGUAGE=en`）を渡して起動し、文言を確かめる。Linux の Chromium は表示言語を `--lang` ではなく環境変数（`LANGUAGE`、`LC_ALL`、`LC_MESSAGES`、`LANG` の順）から決める。macOS の Chromium は OS のバンドル設定から決めるので、macOS ではこのテストを `test.skip` で飛ばし、Phase 6 の手動確認で補う
     - `<html lang>` が表示しているカタログの言語（`ja` か `en`）になることも確かめる。`getUILanguage()` は表示に使うカタログと一致しないことがある（macOS の Chromium に `LANGUAGE=ja` を渡すと、`getUILanguage()` は `ja` を返すのに英語のカタログが使われた）ので、`lang` はカタログの `lang` キーから設定している
-  - [ ] 同じプロファイル（`userDataDir`）でブラウザを閉じて起動し直しても遮断が続く
-  - [ ] フラグメントにスクリプトを仕込んで警告ページを開いても、HTML として解釈されない
-- [ ] `pnpm run test:e2e` を追加する。中身は `pnpm run build && playwright test` にして、毎回 `dist/` を作り直してから E2E を実行する（`dist/` は `.gitignore` に入っていて、クリーンなチェックアウトには存在しないため。pnpm は既定では `pre` スクリプトを実行しないので、`pretest:e2e` には頼らない）
-- [ ] ローカルで初回だけ `pnpm exec playwright install chromium` を実行する手順を README に書く
+  - [x] 同じプロファイル（`userDataDir`）でブラウザを閉じて起動し直しても遮断が続く
+  - [x] フラグメントにスクリプトを仕込んで警告ページを開いても、HTML として解釈されない
+- [x] `pnpm run test:e2e` を追加する。中身は `pnpm run build && playwright test` にして、毎回 `dist/` を作り直してから E2E を実行する（`dist/` は `.gitignore` に入っていて、クリーンなチェックアウトには存在しないため。pnpm は既定では `pre` スクリプトを実行しないので、`pretest:e2e` には頼らない）
+- [x] ローカルで初回だけ `pnpm exec playwright install chromium` を実行する手順を README に書く
+- 結果（2026-10-16）: `e2e/` に 23 件。macOS では 20 件が通り、言語の 3 件は飛ばす。Linux（Docker の `mcr.microsoft.com/playwright:v1.64.1-noble`）では 23 件すべてが通る。`--repeat-each=5` でも不安定なテストはなかった
+  - 計画から足したもの: ASCII ホストのパスやクエリにある `xn--` は遮断しない / 日本語の UI だけでなく、カタログのない言語（`LANGUAGE=fr`）で英語の文言と `lang="en"` になる / 拡張機能を壊した `dist/` で走らせ、テストが落ちることを確かめた（`:~:`、操作ボタン、iframe、`lang`、`textContent`）
+  - Playwright の `newPage()` は `about:blank` の履歴を持つので（`history.length` が 2）、「新しいタブの最初のページ」は `target="_blank"` のリンクで開く
+  - `sandbox` 付きの iframe は Chrome 156 では警告ページへ転送され、日英併記の固定の文言が出る
+  - フラグメントへの HTML の仕込み: URL のシリアライズで `<` はパーセントエンコードされ、ホスト名にも `<` は入れられない（Punycode は ASCII をそのまま残すので、`xn--` ラベルを Unicode に戻しても `<` は出てこない）。そのため、テストでは `&lt;` のような文字参照がそのまま文字として出ることを確かめ、`textContent` と `innerHTML` の違いを見分ける
+  - Linux では、ブラウザがまだ keep-alive の接続を持ったままテストサーバーを閉じると `server.close()` が終わらないので、先に `closeAllConnections()` を呼ぶ
+  - E2E のコードでは `typescript/prefer-readonly-parameter-types` を切る（`docs/decisions.md` の P1）
 
 ## Phase 5: CI、リリース、ドキュメント
 

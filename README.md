@@ -34,6 +34,7 @@ mise trust            # only if you use mise (see docs/template-decisions.md D14
 pnpm install          # creates pnpm-lock.yaml; commit it
 git init -b main && git add -A && git commit -m "chore: initial commit from copier-ts7"
 pnpm run check
+pnpm exec playwright install chromium   # once, before the first `pnpm run test:e2e`
 ```
 
 Without direnv, prefix commands with `nix develop --command`.
@@ -58,27 +59,29 @@ This project is a Chrome extension, not a Node.js program, so it changes the tem
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `tsconfig.json`                | Covers only `src/` (browser code): `module: "preserve"`, `moduleResolution: "bundler"`, `lib: ["esnext", "dom"]`, `types: ["chrome"]`                                                                              |
 | `tsconfig.node.json`           | New. The template's Node.js settings, for `scripts/`, `e2e/` and `*.config.ts`                                                                                                                                     |
-| `package.json`                 | `typecheck` checks both tsconfigs. `build` and `build:watch` added; `dev` removed. Adds `esbuild`, `@types/chrome`, `@types/punycode` and `punycode`                                                               |
+| `package.json`                 | `typecheck` checks both tsconfigs. `build`, `build:watch` and `test:e2e` added; `dev` removed. Adds `esbuild`, `@playwright/test`, `@types/chrome`, `@types/punycode` and `punycode`                               |
 | `pnpm-workspace.yaml`          | New. Denies esbuild's build script (`allowBuilds`); its binary comes from optionalDependencies                                                                                                                     |
 | `scripts/build.ts`             | New. Bundles `src/background.ts` and `src/blocked.ts` with esbuild and copies the manifest, HTML, CSS and `_locales` into `dist/`                                                                                  |
 | `vitest.config.ts`             | Resolves packages with the same main fields as the esbuild browser bundle, so tests import the shipped file. Coverage excludes the entry points `src/background.ts` and `src/blocked.ts` instead of `src/index.ts` |
-| `.oxlintrc.json`, `.gitignore` | Ignore `dist/`                                                                                                                                                                                                     |
+| `.oxlintrc.json`, `.gitignore` | Ignore `dist/`, `test-results/` and `playwright-report/`. `.oxlintrc.json` also turns off `prefer-readonly-parameter-types` in `e2e/` (docs/decisions.md P1)                                                       |
+| `playwright.config.ts`, `e2e/` | New. E2E tests that load `dist/` into Chromium                                                                                                                                                                     |
 | `src/`                         | The `greet` sample and `src/index.ts` are removed                                                                                                                                                                  |
 
 ## Scripts
 
-| Script                   | What it does                                    |
-| ------------------------ | ----------------------------------------------- |
-| `pnpm run build`         | Build the unpacked extension into `dist/`       |
-| `pnpm run build:watch`   | Rebuild `dist/` on every change                 |
-| `pnpm run typecheck`     | Type-check `src/` and the Node.js side          |
-| `pnpm test`              | Run Vitest in watch mode                        |
-| `pnpm run test:run`      | Run tests once                                  |
-| `pnpm run test:coverage` | Run tests with coverage thresholds              |
-| `pnpm run lint`          | Lint with oxlint (type-aware)                   |
-| `pnpm run format`        | Format with oxfmt                               |
-| `pnpm run format:check`  | Check formatting                                |
-| `pnpm run check`         | typecheck → lint → format:check → test:coverage |
+| Script                   | What it does                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| `pnpm run build`         | Build the unpacked extension into `dist/`                                              |
+| `pnpm run build:watch`   | Rebuild `dist/` on every change                                                        |
+| `pnpm run typecheck`     | Type-check `src/` and the Node.js side                                                 |
+| `pnpm test`              | Run Vitest in watch mode                                                               |
+| `pnpm run test:run`      | Run tests once                                                                         |
+| `pnpm run test:coverage` | Run tests with coverage thresholds                                                     |
+| `pnpm run lint`          | Lint with oxlint (type-aware)                                                          |
+| `pnpm run format`        | Format with oxfmt                                                                      |
+| `pnpm run format:check`  | Check formatting                                                                       |
+| `pnpm run check`         | typecheck → lint → format:check → test:coverage                                        |
+| `pnpm run test:e2e`      | Build `dist/`, then run the Playwright E2E tests. The language tests run on Linux only |
 
 ## Conventions
 
