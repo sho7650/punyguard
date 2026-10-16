@@ -13,7 +13,7 @@ export interface HostDescription {
   readonly characters: readonly HostCharacter[];
 }
 
-const SCRIPTS = [
+const DETECTED_SCRIPTS = [
   "Latin",
   "Cyrillic",
   "Greek",
@@ -25,7 +25,16 @@ const SCRIPTS = [
   "Arabic",
   "Hebrew",
   "Thai",
-].map((name) => ({ name, pattern: new RegExp(String.raw`\p{Script=${name}}`, "u") }));
+] as const;
+const OTHER_SCRIPT = "Other";
+
+// Every script name describeHost can report; the warning page shows each as script<Name>.
+export const SCRIPT_NAMES: readonly string[] = [...DETECTED_SCRIPTS, OTHER_SCRIPT];
+
+const SCRIPTS = DETECTED_SCRIPTS.map((name) => ({
+  name,
+  pattern: new RegExp(String.raw`\p{Script=${name}}`, "u"),
+}));
 
 function scriptOf(character: string): string {
   for (const { name, pattern } of SCRIPTS) {
@@ -33,7 +42,7 @@ function scriptOf(character: string): string {
       return name;
     }
   }
-  return "Other";
+  return OTHER_SCRIPT;
 }
 
 function describeCharacter(character: string): HostCharacter {

@@ -15,7 +15,13 @@
     {
       "files": ["src/**/*.test.ts"],
       "plugins": ["typescript", "unicorn", "import", "vitest"]
+    },
+    {
+      "files": ["e2e/**/*.ts"],
+      "rules": {
+        "typescript/prefer-readonly-parameter-types": "off"
+      }
     }
   ],
-  "ignorePatterns": ["coverage/**", "dist/**"]
+  "ignorePatterns": ["coverage/**", "dist/**", "test-results/**", "playwright-report/**"]
 }
