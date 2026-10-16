@@ -71,12 +71,23 @@ export async function removeDynamicRules(worker: Worker): Promise<void> {
 }
 
 // The tooltip the extension should show, built from the catalog Chrome actually uses: macOS
-// Chromium ignores LANGUAGE, so the text depends on the OS language.
-export function expectedTitle(worker: Worker, problemKeys: readonly string[]): Promise<string> {
-  return worker.evaluate(
-    (keys) => ["actionTitle", ...keys].map((key) => chrome.i18n.getMessage(key)).join("\n"),
-    [...problemKeys],
+// Chromium ignores LANGUAGE, so the text depends on the OS language. getMessage returns ""
+// for a key the catalog lacks, so an empty message fails here instead of matching an
+// equally empty tooltip line.
+export async function expectedTitle(
+  worker: Worker,
+  problemKeys: readonly string[],
+): Promise<string> {
+  const keys = ["actionTitle", ...problemKeys];
+  const messages = await worker.evaluate(
+    (catalogKeys) => catalogKeys.map((key) => chrome.i18n.getMessage(key)),
+    keys,
   );
+  const missing = keys.filter((_key, index) => messages[index] === "");
+  if (missing.length > 0) {
+    throw new Error(`The catalog has no message for ${missing.join(", ")}`);
+  }
+  return messages.join("\n");
 }
 
 // The same control a user changes in chrome://extensions ("Site access").
