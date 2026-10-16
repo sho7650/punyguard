@@ -52,9 +52,9 @@ If you limit **Site access** in `chrome://extensions` to **On click** or to spec
 
 Chrome does not run extensions in Incognito windows unless you turn on **Allow in Incognito** on the extension's details page in `chrome://extensions`. Until then, **IDN hosts are not blocked in Incognito windows**, and the `!` badge does not tell you so.
 
-Once allowed, IDN hosts are blocked there too, but **the warning page does not open**: Chrome cannot show an extension's own pages in Incognito tabs, so you get Chrome's "is blocked" page with `ERR_BLOCKED_BY_CLIENT` instead. The original URL is still in the address bar, after `blocked.html#`.
+Once allowed, IDN hosts are blocked there too, but **the warning page does not open in place of a whole page**: Chrome cannot show an extension's own pages in Incognito tabs, so you get Chrome's "is blocked" page with `ERR_BLOCKED_BY_CLIENT` instead. The original URL is still in the address bar, after `blocked.html#`, and so is any password in it: the warning page, which removes it in normal windows, does not run. An IDN iframe inside an Incognito page may still show the warning page within the frame.
 
-Allowing it does not give PunyGuard anything to read: it only has Chrome apply the same rule there, and it still sends and stores nothing.
+As in normal windows, the warning page reads the original URL only to show it on screen; PunyGuard sends and stores nothing.
 
 ### The `!` badge
 
