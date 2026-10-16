@@ -1,7 +1,7 @@
 // Each test gets its own server, profile and browser, so tests never share history,
 // site access or the toolbar state.
 import { test as base } from "@playwright/test";
-import { launchExtension, newUserDataDir, type Extension } from "./extension.ts";
+import { launchExtension, newUserDataDir, removeUserDataDir, type Extension } from "./extension.ts";
 import { startServer, type TestServer } from "./server.ts";
 
 interface Fixtures {
@@ -20,9 +20,17 @@ export const test = base.extend<Fixtures>({
     await server.close();
   },
   extension: async ({ uiLanguage }, use) => {
-    const extension = await launchExtension(newUserDataDir(), { LANGUAGE: uiLanguage });
-    await use(extension);
-    await extension.context.close();
+    const userDataDir = newUserDataDir();
+    try {
+      const extension = await launchExtension(userDataDir, { LANGUAGE: uiLanguage });
+      try {
+        await use(extension);
+      } finally {
+        await extension.context.close();
+      }
+    } finally {
+      removeUserDataDir(userDataDir);
+    }
   },
 });
 

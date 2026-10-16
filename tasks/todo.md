@@ -201,6 +201,7 @@ e2e/                     Playwright
   - [x] 言語の切り替え: Linux（CI）では、`launchPersistentContext` の `env` に `LANGUAGE=ja`（または `LANGUAGE=en`）を渡して起動し、文言を確かめる。Linux の Chromium は表示言語を `--lang` ではなく環境変数（`LANGUAGE`、`LC_ALL`、`LC_MESSAGES`、`LANG` の順）から決める。macOS の Chromium は OS のバンドル設定から決めるので、macOS ではこのテストを `test.skip` で飛ばし、Phase 6 の手動確認で補う
     - `<html lang>` が表示しているカタログの言語（`ja` か `en`）になることも確かめる。`getUILanguage()` は表示に使うカタログと一致しないことがある（macOS の Chromium に `LANGUAGE=ja` を渡すと、`getUILanguage()` は `ja` を返すのに英語のカタログが使われた）ので、`lang` はカタログの `lang` キーから設定している
   - [x] 同じプロファイル（`userDataDir`）でブラウザを閉じて起動し直しても遮断が続く
+    - 動的ルールは再起動しても残るので、閉じる前にルールを消し、起動し直したときに登録し直されることを確かめる（PR #3 のレビューで見つかった）。ただし、このときに発火するのは `onInstalled` で、`onStartup` は Phase 6 で手で確かめる
   - [x] フラグメントにスクリプトを仕込んで警告ページを開いても、HTML として解釈されない
 - [x] `pnpm run test:e2e` を追加する。中身は `pnpm run build && playwright test` にして、毎回 `dist/` を作り直してから E2E を実行する（`dist/` は `.gitignore` に入っていて、クリーンなチェックアウトには存在しないため。pnpm は既定では `pre` スクリプトを実行しないので、`pretest:e2e` には頼らない）
 - [x] ローカルで初回だけ `pnpm exec playwright install chromium` を実行する手順を README に書く
@@ -211,6 +212,8 @@ e2e/                     Playwright
   - フラグメントへの HTML の仕込み: URL のシリアライズで `<` はパーセントエンコードされ、ホスト名にも `<` は入れられない（Punycode は ASCII をそのまま残すので、`xn--` ラベルを Unicode に戻しても `<` は出てこない）。そのため、テストでは `&lt;` のような文字参照がそのまま文字として出ることを確かめ、`textContent` と `innerHTML` の違いを見分ける
   - Linux では、ブラウザがまだ keep-alive の接続を持ったままテストサーバーを閉じると `server.close()` が終わらないので、先に `closeAllConnections()` を呼ぶ
   - E2E のコードでは `typescript/prefer-readonly-parameter-types` を切る（`docs/decisions.md` の P1）
+  - ツールチップの期待値は、service worker の `getMessage` で実際のカタログから組み立てる。macOS の Chromium は `LANGUAGE` を無視して OS の言語を使うので、英語の文言を決め打ちにすると日本語の macOS で落ちる（PR #3 のレビューで見つかった）
+  - テストごとのプロファイル（`punyguard-e2e-*`）は、終わったら削除する
 
 ## Phase 5: CI、リリース、ドキュメント
 
@@ -239,10 +242,11 @@ e2e/                     Playwright
 ## Phase 6: 仕上げの検証
 
 - [ ] `pnpm run check`（型チェック、lint、format、カバレッジ 80% 以上）と `pnpm run test:e2e`
-- [ ] 実際の Chrome で受け入れ基準を手で一通り確かめる。E2E で確かめられない次の3点は特に手で確かめる
+- [ ] 実際の Chrome で受け入れ基準を手で一通り確かめる。E2E で確かめられない次の4点は特に手で確かめる
   - [ ] 外部アプリから開いたリンク（`open -a "Google Chrome" "https://аррӏө.com/"`）
   - [ ] macOS で Chrome の表示言語を日本語と英語に切り替えたときの文言
   - [ ] 拡張機能画面でサイトへのアクセスを「クリック時」に変えるとバッジに `!` が出て、「すべてのサイト」に戻すと消えること
+  - [ ] ブラウザの再起動（`onStartup`）でルールが登録し直されること: 拡張機能画面から「パッケージ化されていない拡張機能を読み込む」で入れ、service worker の DevTools で `chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [1] })` を実行してから Chrome を終了して起動し直し、`аррӏө.com` が遮断されることを確かめる。E2E の `--load-extension` は起動のたびに拡張機能を入れ直すので、再起動では `onInstalled`（reason `install`）が発火し、`onStartup` は発火しない
 - [ ] code-reviewer と security-reviewer のエージェントでレビューし、CRITICAL と HIGH を解消する
 - [ ] Release PR をマージし、v0.1.0 の Release と zip ができ、`package.json` と `manifest.json` が `0.1.0` に上がっていることを確かめる
 - [ ] `release-please-config.json` から `"release-as": "0.1.0"` を外す（残すと、次の Release PR も 0.1.0 を提案し続ける）

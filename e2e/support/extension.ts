@@ -1,6 +1,6 @@
 /// <reference types="chrome" />
 // Starts Chromium with the built extension (dist/) loaded and waits until the block rule is in.
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium, expect, type BrowserContext, type Worker } from "@playwright/test";
@@ -19,6 +19,10 @@ export function newUserDataDir(): string {
   return mkdtempSync(path.join(tmpdir(), "punyguard-e2e-"));
 }
 
+export function removeUserDataDir(userDataDir: string): void {
+  rmSync(userDataDir, { recursive: true, force: true });
+}
+
 export async function launchExtension(
   userDataDir: string,
   env: Readonly<Record<string, string>> = {},
@@ -34,11 +38,16 @@ export async function launchExtension(
     ],
     env: { ...process.env, ...env },
   });
-  const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
-  // onInstalled / onStartup register the rule asynchronously after the worker starts.
-  await expect.poll(async () => (await dynamicRules(worker)).length).toBe(1);
-  const id = new URL(worker.url()).host;
-  return { context, worker, id, warningPageUrl: `chrome-extension://${id}/blocked.html` };
+  try {
+    const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
+    // onInstalled registers the rule asynchronously after the worker starts.
+    await expect.poll(async () => (await dynamicRules(worker)).length).toBe(1);
+    const id = new URL(worker.url()).host;
+    return { context, worker, id, warningPageUrl: `chrome-extension://${id}/blocked.html` };
+  } catch (error) {
+    await context.close();
+    throw error;
+  }
 }
 
 export function dynamicRules(worker: Worker): Promise<chrome.declarativeNetRequest.Rule[]> {
@@ -50,6 +59,24 @@ export function toolbarState(worker: Worker): Promise<{ badge: string; title: st
     badge: await chrome.action.getBadgeText({}),
     title: await chrome.action.getTitle({}),
   }));
+}
+
+export async function removeDynamicRules(worker: Worker): Promise<void> {
+  await worker.evaluate(async () => {
+    const rules = await chrome.declarativeNetRequest.getDynamicRules();
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: rules.map((rule) => rule.id),
+    });
+  });
+}
+
+// The tooltip the extension should show, built from the catalog Chrome actually uses: macOS
+// Chromium ignores LANGUAGE, so the text depends on the OS language.
+export function expectedTitle(worker: Worker, problemKeys: readonly string[]): Promise<string> {
+  return worker.evaluate(
+    (keys) => ["actionTitle", ...keys].map((key) => chrome.i18n.getMessage(key)).join("\n"),
+    [...problemKeys],
+  );
 }
 
 // The same control a user changes in chrome://extensions ("Site access").

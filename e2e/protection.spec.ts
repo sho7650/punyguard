@@ -2,8 +2,11 @@
 import { expect, test } from "./support/fixtures.ts";
 import {
   dynamicRules,
+  expectedTitle,
   launchExtension,
   newUserDataDir,
+  removeDynamicRules,
+  removeUserDataDir,
   setSiteAccess,
   toolbarState,
 } from "./support/extension.ts";
@@ -19,39 +22,51 @@ test("registers one rule that RE2 accepts, and leaves the badge empty", async ({
     regex,
   );
   expect(isSupported).toBe(true);
-  expect(await toolbarState(extension.worker)).toEqual({ badge: "", title: "PunyGuard" });
+  expect(await toolbarState(extension.worker)).toEqual({
+    badge: "",
+    title: await expectedTitle(extension.worker, []),
+  });
 });
 
 test("limiting site access shows ! with the reason, and restoring it clears them", async ({
   extension,
 }) => {
+  const limited = await expectedTitle(extension.worker, ["problemNoSiteAccess"]);
+  const normal = await expectedTitle(extension.worker, []);
+  // Guards against a catalog that lost the key: getMessage would return "" for it.
+  expect(limited).not.toBe(normal);
+
   await setSiteAccess(extension, "ON_CLICK");
-  await expect
-    .poll(() => toolbarState(extension.worker))
-    .toEqual({
-      badge: "!",
-      title: 'PunyGuard\nBlocking is off: set site access to "On all sites".',
-    });
+  await expect.poll(() => toolbarState(extension.worker)).toEqual({ badge: "!", title: limited });
 
   await setSiteAccess(extension, "ON_ALL_SITES");
-  await expect
-    .poll(() => toolbarState(extension.worker))
-    .toEqual({ badge: "", title: "PunyGuard" });
+  await expect.poll(() => toolbarState(extension.worker)).toEqual({ badge: "", title: normal });
 });
 
-test("blocking continues after the browser restarts with the same profile", async ({ server }) => {
+// Dynamic rules survive a restart, so the rule is removed first: only registering again can
+// bring it back. Chromium reinstalls an extension loaded with --load-extension on every
+// launch, so this restart fires onInstalled (reason "install"), not onStartup; onStartup is
+// checked by hand in Phase 6 (tasks/todo.md).
+test("a restart registers a lost rule again and blocking resumes", async ({ server }) => {
   const userDataDir = newUserDataDir();
-  const first = await launchExtension(userDataDir);
-  await first.context.close();
-
-  const second = await launchExtension(userDataDir);
   try {
-    const page = await second.context.newPage();
-    await page.goto(server.idnUrl("/after-restart"));
+    const first = await launchExtension(userDataDir);
+    await removeDynamicRules(first.worker);
+    expect(await dynamicRules(first.worker)).toEqual([]);
+    await first.context.close();
 
-    await expect(page).toHaveURL(`${second.warningPageUrl}#${server.idnUrl("/after-restart")}`);
-    expect(server.idnRequests).toEqual([]);
+    // launchExtension waits until the rule is back.
+    const second = await launchExtension(userDataDir);
+    try {
+      const page = await second.context.newPage();
+      await page.goto(server.idnUrl("/after-restart"));
+
+      await expect(page).toHaveURL(`${second.warningPageUrl}#${server.idnUrl("/after-restart")}`);
+      expect(server.idnRequests).toEqual([]);
+    } finally {
+      await second.context.close();
+    }
   } finally {
-    await second.context.close();
+    removeUserDataDir(userDataDir);
   }
 });
