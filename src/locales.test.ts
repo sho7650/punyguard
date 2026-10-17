@@ -14,14 +14,20 @@ const catalogs: Readonly<Record<string, Readonly<Record<string, { readonly messa
   en,
 };
 
-// Keys the warning page fills in through data-i18n attributes
-const blockedPageKeys =
-  readFileSync(new URL("blocked.html", import.meta.url), "utf8").match(/(?<=data-i18n=")[^"]+/gu) ??
-  [];
+// Keys a page fills in through data-i18n attributes
+function pageKeys(page: string): string[] {
+  return (
+    readFileSync(new URL(page, import.meta.url), "utf8").match(/(?<=data-i18n=")[^"]+/gu) ?? []
+  );
+}
+
+const blockedPageKeys = pageKeys("blocked.html");
+const optionsPageKeys = pageKeys("options.html");
 
 const usedKeys = [
   ...PROTECTION_MESSAGE_KEYS,
   ...blockedPageKeys,
+  ...optionsPageKeys,
   ...SCRIPT_NAMES.map((name) => `script${name}`),
 ];
 
@@ -29,8 +35,9 @@ test("the Japanese and English messages define the same keys", () => {
   expect(Object.keys(ja).toSorted()).toEqual(Object.keys(en).toSorted());
 });
 
-test("the warning page uses data-i18n keys", () => {
-  expect(blockedPageKeys).toContain("heading");
+test("the warning page and the options page use data-i18n keys", () => {
+  expect(blockedPageKeys).toContain("headingUserinfo");
+  expect(optionsPageKeys).toContain("optionBlockIpHosts");
 });
 
 describe.each(Object.entries(catalogs))("the %s catalog", (_language, catalog) => {

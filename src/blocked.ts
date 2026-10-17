@@ -1,8 +1,11 @@
 // Fills in the warning page. The fragment is untrusted: any page can open blocked.html with
 // a fragment of its choice, so everything from it is written with textContent and the
 // original URL is never turned into a link.
-import { hidePassword, parseBlockedUrl } from "./core/blocked-url.ts";
+import { findBlockReasons, type BlockReason } from "./core/block-reasons.ts";
+import { maskPassword, parseBlockedUrl } from "./core/blocked-url.ts";
 import { describeHost, type HostCharacter } from "./core/host-description.ts";
+import { localize } from "./localize.ts";
+import { loadSavedSettings } from "./settings-storage.ts";
 
 function requireElement<T extends HTMLElement>(id: string, type: new () => T): T {
   const element = document.querySelector(`#${id}`);
@@ -10,18 +13,6 @@ function requireElement<T extends HTMLElement>(id: string, type: new () => T): T
     throw new TypeError(`blocked.html has no <${type.name}> with id "${id}"`);
   }
   return element;
-}
-
-// The page shows the Japanese or the English catalog, so lang names the catalog in use,
-// not the browser's UI language (which may be one with no catalog, such as French).
-function localize(): void {
-  document.documentElement.lang = chrome.i18n.getMessage("lang");
-  for (const element of document.querySelectorAll<HTMLElement>("[data-i18n]")) {
-    const key = element.dataset["i18n"];
-    if (key !== undefined) {
-      element.textContent = chrome.i18n.getMessage(key);
-    }
-  }
 }
 
 function scriptName(script: string): string {
@@ -38,9 +29,8 @@ function characterRow({ character, script, codePoint }: HostCharacter): HTMLTabl
   return row;
 }
 
-function showDetails(href: string, hostname: string): void {
+function showIdnHost(hostname: string): void {
   const host = describeHost(hostname);
-  requireElement("original-url", HTMLElement).textContent = href;
   requireElement("unicode-host", HTMLElement).textContent = host.unicode;
   requireElement("punycode-host", HTMLElement).textContent = host.punycode;
   requireElement("characters", HTMLTableSectionElement).replaceChildren(
@@ -48,7 +38,39 @@ function showDetails(href: string, hostname: string): void {
       .filter((character) => !character.isAscii)
       .map((character) => characterRow(character)),
   );
-  requireElement("details", HTMLElement).hidden = false;
+}
+
+// The parts of the blocked URL, with the password already masked.
+interface BlockedUrlParts {
+  readonly hostname: string;
+  readonly host: string;
+  readonly username: string;
+  readonly password: string;
+}
+
+const REASON_FILLERS: Readonly<Record<BlockReason, (parts: BlockedUrlParts) => void>> = {
+  idnHost: ({ hostname }) => {
+    showIdnHost(hostname);
+  },
+  // The userinfo is what was dressed up as the destination; the host is where the link leads.
+  userinfo: ({ username, password, host }) => {
+    requireElement("userinfo", HTMLElement).textContent =
+      password === "" ? username : `${username}:${password}`;
+    requireElement("actual-host", HTMLElement).textContent = host;
+  },
+  ipHost: ({ hostname }) => {
+    requireElement("ip-address", HTMLElement).textContent = hostname;
+  },
+};
+
+// Shows a section for each reason that blocked the URL under the current settings. A URL that
+// meets none (the page opened directly) shows the original URL alone.
+async function showReasons(parts: BlockedUrlParts): Promise<void> {
+  const reasons = findBlockReasons(parts, await loadSavedSettings());
+  for (const reason of reasons) {
+    REASON_FILLERS[reason](parts);
+    requireElement(`reason-${reason}`, HTMLElement).hidden = false;
+  }
 }
 
 async function closeThisTab(): Promise<void> {
@@ -88,17 +110,26 @@ function blockedFragment(): string {
   return start === -1 ? location.hash : url.slice(start);
 }
 
+function showBlockedUrl({ href }: Readonly<Pick<URL, "href">>): void {
+  const shown = new URL(maskPassword(href));
+  // The address bar shows this page's own URL, with the original URL in the fragment.
+  // Only rewritten when a password had to be masked here, so ":~:" in other URLs is left alone.
+  if (shown.href !== href) {
+    history.replaceState(history.state, "", `#${shown.href}`);
+  }
+  requireElement("original-url", HTMLElement).textContent = shown.href;
+  requireElement("details", HTMLElement).hidden = false;
+  const { hostname, host, username, password } = shown;
+  showReasons({ hostname, host, username, password }).catch((error: unknown) => {
+    console.error("Failed to show why the page was blocked", error);
+  });
+}
+
 localize();
 const blockedUrl = parseBlockedUrl(blockedFragment());
 if (blockedUrl === null) {
   requireElement("unreadable", HTMLElement).hidden = false;
 } else {
-  const shownUrl = hidePassword(blockedUrl.href);
-  // The address bar shows this page's own URL, with the original URL in the fragment.
-  // Only rewritten when there is a password, so ":~:" in other URLs is left alone.
-  if (blockedUrl.password !== "") {
-    history.replaceState(history.state, "", `#${shownUrl}`);
-  }
-  showDetails(shownUrl, blockedUrl.hostname);
+  showBlockedUrl(blockedUrl);
 }
 showActions();

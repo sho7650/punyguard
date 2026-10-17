@@ -8,7 +8,7 @@ import packageJson from "../package.json" with { type: "json" };
 
 const OUT_DIR = "dist";
 
-const ENTRY_POINTS = ["src/background.ts", "src/blocked.ts"];
+const ENTRY_POINTS = ["src/background.ts", "src/blocked.ts", "src/options.ts"];
 
 interface StaticFile {
   readonly from: string;
@@ -33,6 +33,8 @@ const STATIC_FILES: readonly StaticFile[] = [
   { from: "manifest.json", to: "manifest.json" },
   { from: "src/blocked.html", to: "blocked.html" },
   { from: "src/blocked.css", to: "blocked.css" },
+  { from: "src/options.html", to: "options.html" },
+  { from: "src/options.css", to: "options.css" },
   { from: "_locales", to: "_locales" },
   { from: "icons", to: "icons" },
   { from: "LICENSE", to: "LICENSE" },
@@ -43,7 +45,7 @@ const buildOptions: esbuild.BuildOptions = {
   entryPoints: ENTRY_POINTS,
   outdir: OUT_DIR,
   bundle: true,
-  // A classic script works both as the service worker and from blocked.html,
+  // A classic script works both as the service worker and from the extension pages,
   // so the manifest needs no "type": "module".
   format: "iife",
   platform: "browser",

@@ -1,0 +1,39 @@
+form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.setting {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.setting > span {
+  display: grid;
+}
+
+.setting input {
+  margin-top: 0.35rem;
+}
+
+/* The exclusion only applies to IP address hosts, so it sits under that setting. */
+.setting.nested {
+  margin-left: 2rem;
+}
+
+.setting:has(input:disabled) {
+  color: var(--muted);
+  cursor: default;
+}
+
+.example {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.error {
+  color: var(--accent);
+}

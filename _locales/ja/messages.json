@@ -15,12 +15,24 @@
     "message": "遮断が効いていません: サイトへのアクセスを「すべてのサイト」にしてください。",
     "description": "すべてのサイトへのアクセス権がないとき、バッジの ! とともにツールチップに出す行。"
   },
+  "noticeUserinfoOff": {
+    "message": "ユーザー情報付き URL の遮断: 無効",
+    "description": "利用者がユーザー情報付き URL の遮断を無効にしているとき、ツールチップに出す行。バッジは出さない。"
+  },
+  "noticeIpHostsOff": {
+    "message": "IP アドレスホストの遮断: 無効",
+    "description": "利用者が IP アドレスホストの遮断を無効にしているとき、ツールチップに出す行。バッジは出さない。"
+  },
+  "noticePrivateIpsExcluded": {
+    "message": "IP アドレスホストの遮断: プライベート IP アドレスを除外中",
+    "description": "IP アドレスホストの遮断からプライベート IP アドレスを除外しているとき、ツールチップに出す行。バッジは出さない。"
+  },
   "extensionName": {
     "message": "PunyGuard",
     "description": "Extension name."
   },
   "extensionDescription": {
-    "message": "国際化ドメイン名（IDN、xn--）への移動を止め、代わりに警告ページを表示します。",
+    "message": "見た目で接続先を偽る URL（国際化ドメイン名、ユーザー情報付き URL、IP アドレスホスト）への移動を止め、代わりに警告ページを表示します。",
     "description": "Extension description in the Chrome Web Store and chrome://extensions."
   },
   "pageTitle": {
@@ -32,12 +44,48 @@
     "description": "Main heading of the warning page."
   },
   "explanation": {
-    "message": "このページのアドレスには国際化ドメイン名（IDN）が使われています。IDN では、ほかの文字体系の文字を使って見慣れたサイトのアドレスに似せられるため、PunyGuard は IDN のホストへの移動をすべて止めます。",
-    "description": "Why the page was blocked."
+    "message": "このページのアドレスは、見た目で接続先を偽るときに使われる形をしています。",
+    "description": "Why the page was blocked. A section for each reason follows when the URL can be read."
   },
   "unreadableUrl": {
     "message": "止めたページのアドレスを読み取れませんでした。",
     "description": "Shown instead of the details when the fragment does not hold an http(s) URL."
+  },
+  "headingIdnHost": {
+    "message": "国際化ドメイン名（IDN）",
+    "description": "Heading of the IDN host reason on the warning page."
+  },
+  "explanationIdnHost": {
+    "message": "ホストに国際化ドメイン名（IDN）が使われています。IDN では、ほかの文字体系の文字を使って見慣れたサイトのアドレスに似せられるため、PunyGuard は IDN のホストへの移動をすべて止めます。",
+    "description": "Why IDN hosts are blocked."
+  },
+  "headingUserinfo": {
+    "message": "ユーザー情報付き URL",
+    "description": "Heading of the userinfo reason on the warning page."
+  },
+  "explanationUserinfo": {
+    "message": "アドレスの「@」より前はユーザー名で、接続先ではありません。「@」の前に見慣れたドメインを置くと、そのサイトへのリンクに見せかけられます。",
+    "description": "Why URLs with user info are blocked."
+  },
+  "labelUserinfo": {
+    "message": "ユーザー情報（「@」より前）",
+    "description": "Label for the user info in the URL (user name, and any password masked as ***), shown as plain text."
+  },
+  "labelActualHost": {
+    "message": "実際の接続先",
+    "description": "Label for the host the URL really leads to."
+  },
+  "headingIpHost": {
+    "message": "IP アドレスホスト",
+    "description": "Heading of the IP address host reason on the warning page."
+  },
+  "explanationIpHost": {
+    "message": "ホスト名の代わりに IP アドレスが使われています。IP アドレスからは、どのサイトなのかを確かめられません。",
+    "description": "Why IP address hosts are blocked."
+  },
+  "labelIpAddress": {
+    "message": "IP アドレス",
+    "description": "Label for the IP address host."
   },
   "labelOriginalUrl": {
     "message": "アドレス",
@@ -122,5 +170,29 @@
   "scriptOther": {
     "message": "その他",
     "description": "Script name for anything not listed."
+  },
+  "optionsTitle": {
+    "message": "PunyGuard の設定",
+    "description": "Title and heading of the options page."
+  },
+  "optionsIntro": {
+    "message": "国際化ドメイン名（IDN）への移動は、常に止めます。次の遮断は、ここで無効にできます。変更はすぐに保存され、次の移動から効きます。",
+    "description": "Introduction on the options page."
+  },
+  "optionBlockUserinfo": {
+    "message": "ユーザー情報付き URL を止める",
+    "description": "Checkbox on the options page."
+  },
+  "optionBlockIpHosts": {
+    "message": "IP アドレスホストを止める",
+    "description": "Checkbox on the options page."
+  },
+  "optionExcludePrivateIps": {
+    "message": "ただし、プライベート IP アドレス（LAN 内の機器や localhost など）は止めない",
+    "description": "Checkbox under the IP address host one; disabled while that is off."
+  },
+  "optionsSaveFailed": {
+    "message": "設定を保存できませんでした。表示は保存されている設定に戻しました。",
+    "description": "Shown when saving the settings fails."
   }
 }

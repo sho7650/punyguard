@@ -7,6 +7,9 @@ export const IDN_HOST = "xn--80a6aa68c8d.com";
 export const IDN_UNICODE_HOST = "аррӏө.com";
 export const ASCII_HOST = "ascii.test";
 export const IDN_CONTENT = "IDN CONTENT REACHED";
+// A documentation address (RFC 5737). Blocking redirects before any connection, so nothing
+// needs to answer there; a test that expects it to load would hang instead.
+export const PUBLIC_IP_URL = "http://203.0.113.5/login";
 
 export interface TestServer {
   readonly port: number;
@@ -43,6 +46,9 @@ function asciiRoutes(idnUrl: (path: string) => string): Readonly<Record<string, 
     },
     "/iframe": (response) => {
       html(response, `<p id="outer">outer</p><iframe src="${idnUrl("/framed")}"></iframe>`);
+    },
+    "/ip-iframe": (response) => {
+      html(response, `<p id="outer">outer</p><iframe src="${PUBLIC_IP_URL}"></iframe>`);
     },
     "/sandboxed-iframe": (response) => {
       html(response, `<p id="outer">outer</p><iframe sandbox src="${idnUrl("/framed")}"></iframe>`);

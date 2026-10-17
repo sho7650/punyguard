@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="optionsTitle">PunyGuard</title>
+    <link rel="icon" href="icons/icon-32.png" />
+    <!-- The warning page's stylesheet sets the colors, fonts and layout both pages share. -->
+    <link rel="stylesheet" href="blocked.css" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-i18n="optionsTitle"></h1>
+      <p data-i18n="optionsIntro"></p>
+
+      <form id="settings">
+        <label class="setting">
+          <input type="checkbox" id="blockUserinfo" />
+          <span>
+            <span data-i18n="optionBlockUserinfo"></span>
+            <span class="example code">https://www.apple.com@example.com/</span>
+          </span>
+        </label>
+        <label class="setting">
+          <input type="checkbox" id="blockIpHosts" />
+          <span>
+            <span data-i18n="optionBlockIpHosts"></span>
+            <span class="example code">http://203.0.113.5/</span>
+          </span>
+        </label>
+        <label class="setting nested">
+          <input type="checkbox" id="excludePrivateIps" />
+          <span>
+            <span data-i18n="optionExcludePrivateIps"></span>
+            <span class="example code">http://192.168.0.1/ http://127.0.0.1/ http://[::1]/</span>
+          </span>
+        </label>
+      </form>
+
+      <p id="save-failed" class="error" data-i18n="optionsSaveFailed" role="alert" hidden></p>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

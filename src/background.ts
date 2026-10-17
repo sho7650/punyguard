@@ -1,8 +1,11 @@
-// Keeps the block rule registered and reports through the toolbar badge when blocking is off.
+// Keeps the block rules registered for the current settings and reports through the toolbar
+// badge when blocking is off.
 import { createProtector } from "./core/protection.ts";
+import { loadSavedSettings, onSettingsChanged } from "./settings-storage.ts";
 
 const runProtection = createProtector({
   warningPageUrl: chrome.runtime.getURL("blocked.html"),
+  loadSettings: loadSavedSettings,
   // oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- mirrors Chrome's mutable UpdateRuleOptions
   updateDynamicRules: (options) => chrome.declarativeNetRequest.updateDynamicRules(options),
   containsOrigins: (origins) => chrome.permissions.contains({ origins: [...origins] }),
@@ -36,4 +39,14 @@ chrome.permissions.onAdded.addListener(() => {
 });
 chrome.permissions.onRemoved.addListener(() => {
   protect();
+});
+// A change on the options page takes effect from the next navigation (CONTEXT.md).
+onSettingsChanged(() => {
+  protect();
+});
+// The toolbar icon has no popup; clicking it opens the settings.
+chrome.action.onClicked.addListener(() => {
+  chrome.runtime.openOptionsPage().catch((error: unknown) => {
+    console.error("Failed to open the options page", error);
+  });
 });

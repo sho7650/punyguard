@@ -9,11 +9,17 @@ export function parseBlockedUrl(hash: string): URL | null {
   return url !== null && BLOCKED_PROTOCOLS.has(url.protocol) ? url : null;
 }
 
-// The warning page shows the original URL on screen, where a password in it could be read over
-// a shoulder or end up in a screenshot. The user name stays: an xn-- there is what got the URL
-// blocked (the known false positive in README.md).
-export function hidePassword(href: string): string {
+export const MASKED_PASSWORD = "***";
+
+// The block rules mask the password before the redirect (block-rule.ts), but anyone can open
+// the warning page with a password in the fragment, so the page masks it again before showing
+// it. The masked password stays, so the URL still has the userinfo it was blocked for. The user
+// name stays too: in a URL with user info it is the part dressed up as the destination, which
+// the warning page points out.
+export function maskPassword(href: string): string {
   const shown = new URL(href);
-  shown.password = "";
+  if (shown.password !== "") {
+    shown.password = MASKED_PASSWORD;
+  }
   return shown.href;
 }
