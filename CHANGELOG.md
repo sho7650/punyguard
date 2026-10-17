@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/sho7650/punyguard/compare/v0.1.1...v0.2.0) (2026-10-17)
+
+
+### Features
+
+* block URLs with userinfo and IP address hosts, with an options page ([7b02ffc](https://github.com/sho7650/punyguard/commit/7b02ffc3369da1734a80a3c06e2eaf40655c630f))
+* block URLs with userinfo and IP address hosts, with an options page ([e35ab45](https://github.com/sho7650/punyguard/commit/e35ab45f57607cb6506532ec238ca85a49dd0897))
+
 ## [0.1.1](https://github.com/sho7650/punyguard/compare/v0.1.0...v0.1.1) (2026-10-16)
 
 
