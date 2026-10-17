@@ -6,3 +6,6 @@ result
 dist/
 test-results/
 playwright-report/
+blog/
+graphify-out/
+CLAUDE-SECURITY-*/
