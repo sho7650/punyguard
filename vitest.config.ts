@@ -14,8 +14,16 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      // Thin entry points that touch browser APIs; covered by the E2E tests
-      exclude: ["src/**/*.test.ts", "src/background.ts", "src/blocked.ts"],
+      // Thin entry points and adapters that touch browser APIs; covered by the E2E tests
+      exclude: [
+        "src/**/*.test.ts",
+        "src/**/test-support/**",
+        "src/background.ts",
+        "src/blocked.ts",
+        "src/options.ts",
+        "src/localize.ts",
+        "src/settings-storage.ts",
+      ],
       // Enforced from day one to keep tests first (D9)
       thresholds: {
         lines: 80,

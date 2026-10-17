@@ -55,6 +55,11 @@ p > span {
 }
 
 h2 {
+  margin: 2rem 0 0.5rem;
+  font-size: 1.125rem;
+}
+
+h3 {
   margin: 1.5rem 0 0.5rem;
   font-size: 1rem;
 }

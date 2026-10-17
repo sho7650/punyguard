@@ -20,12 +20,14 @@
       </h1>
       <p data-i18n="explanation">
         <span lang="ja"
-          >このページのアドレスには国際化ドメイン名（IDN）が使われています。PunyGuard は、IDN
-          のホストへの移動をすべて止める拡張機能です。</span
+          >このページのアドレスは、見た目で接続先を偽るときに使われる形をしています。PunyGuard
+          は、国際化ドメイン名（IDN）、ユーザー情報付き URL、IP
+          アドレスホストへの移動を止める拡張機能です。</span
         >
         <span lang="en"
-          >This page's address uses an internationalized domain name (IDN). PunyGuard is an
-          extension that blocks every IDN host.</span
+          >This page's address has a form used to disguise where it really leads. PunyGuard is an
+          extension that blocks internationalized domain names (IDN), URLs with user info and IP
+          address hosts.</span
         >
       </p>
 
@@ -35,24 +37,51 @@
         <dl>
           <dt data-i18n="labelOriginalUrl"></dt>
           <dd id="original-url" class="code"></dd>
-          <dt data-i18n="labelUnicode"></dt>
-          <dd id="unicode-host" class="code"></dd>
-          <dt data-i18n="labelPunycode"></dt>
-          <dd id="punycode-host" class="code"></dd>
         </dl>
-        <h2 data-i18n="headingCharacters"></h2>
-        <div class="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col" data-i18n="columnCharacter"></th>
-                <th scope="col" data-i18n="columnScript"></th>
-                <th scope="col" data-i18n="columnCodePoint"></th>
-              </tr>
-            </thead>
-            <tbody id="characters"></tbody>
-          </table>
-        </div>
+
+        <section id="reason-idnHost" hidden>
+          <h2 data-i18n="headingIdnHost"></h2>
+          <p data-i18n="explanationIdnHost"></p>
+          <dl>
+            <dt data-i18n="labelUnicode"></dt>
+            <dd id="unicode-host" class="code"></dd>
+            <dt data-i18n="labelPunycode"></dt>
+            <dd id="punycode-host" class="code"></dd>
+          </dl>
+          <h3 data-i18n="headingCharacters"></h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col" data-i18n="columnCharacter"></th>
+                  <th scope="col" data-i18n="columnScript"></th>
+                  <th scope="col" data-i18n="columnCodePoint"></th>
+                </tr>
+              </thead>
+              <tbody id="characters"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="reason-userinfo" hidden>
+          <h2 data-i18n="headingUserinfo"></h2>
+          <p data-i18n="explanationUserinfo"></p>
+          <dl>
+            <dt data-i18n="labelUserinfo"></dt>
+            <dd id="userinfo" class="code"></dd>
+            <dt data-i18n="labelActualHost"></dt>
+            <dd id="actual-host" class="code"></dd>
+          </dl>
+        </section>
+
+        <section id="reason-ipHost" hidden>
+          <h2 data-i18n="headingIpHost"></h2>
+          <p data-i18n="explanationIpHost"></p>
+          <dl>
+            <dt data-i18n="labelIpAddress"></dt>
+            <dd id="ip-address" class="code"></dd>
+          </dl>
+        </section>
       </section>
 
       <div id="actions" class="actions" hidden>

@@ -1,4 +1,5 @@
-import { buildBlockRule } from "./block-rule.ts";
+import { BLOCK_RULE_IDS, buildBlockRules } from "./block-rule.ts";
+import type { Settings } from "./settings.ts";
 
 // Every message key ensureProtection looks up; src/locales.test.ts checks that both catalogs
 // define them.
@@ -6,13 +7,19 @@ export const PROTECTION_MESSAGE_KEYS = [
   "actionTitle",
   "problemRuleNotRegistered",
   "problemNoSiteAccess",
+  "noticeUserinfoOff",
+  "noticeIpHostsOff",
+  "noticePrivateIpsExcluded",
 ] as const;
 type ProtectionMessageKey = (typeof PROTECTION_MESSAGE_KEYS)[number];
-type ProblemMessageKey = Exclude<ProtectionMessageKey, "actionTitle">;
+type ProblemMessageKey = "problemRuleNotRegistered" | "problemNoSiteAccess";
+type NoticeMessageKey = "noticeUserinfoOff" | "noticeIpHostsOff" | "noticePrivateIpsExcluded";
 
 // The browser APIs that ensureProtection needs, passed in so that tests can stand in for them.
 export interface ProtectionDeps {
   readonly warningPageUrl: string;
+  // Never rejects: unusable settings fall back to the defaults (loadSettings)
+  readonly loadSettings: () => Promise<Settings>;
   readonly updateDynamicRules: (
     // oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- mirrors Chrome's mutable UpdateRuleOptions
     options: chrome.declarativeNetRequest.UpdateRuleOptions,
@@ -25,10 +32,13 @@ export interface ProtectionDeps {
   readonly logError: (message: string, error: unknown) => void;
 }
 
-async function registerBlockRule(deps: ProtectionDeps): Promise<ProblemMessageKey | null> {
-  const rule = buildBlockRule(deps.warningPageUrl);
+async function registerBlockRules(
+  deps: ProtectionDeps,
+  settings: Settings,
+): Promise<ProblemMessageKey | null> {
+  const rules = buildBlockRules(deps.warningPageUrl, settings);
   try {
-    await deps.updateDynamicRules({ removeRuleIds: [rule.id], addRules: [rule] });
+    await deps.updateDynamicRules({ removeRuleIds: [...BLOCK_RULE_IDS], addRules: rules });
     return null;
   } catch (error) {
     deps.logError("Failed to register the block rule", error);
@@ -49,13 +59,25 @@ async function checkSiteAccess(deps: ProtectionDeps): Promise<ProblemMessageKey 
   }
 }
 
+// What the user loosened. These are choices, not faults, so they go in the tooltip without the
+// ! badge (ADR-0003). The exclusion has no effect while IP address hosts are not blocked.
+function findNotices(settings: Settings): NoticeMessageKey[] {
+  return [
+    ...(settings.blockUserinfo ? [] : (["noticeUserinfoOff"] as const)),
+    ...(settings.blockIpHosts ? [] : (["noticeIpHostsOff"] as const)),
+    ...(settings.blockIpHosts && settings.excludePrivateIps
+      ? (["noticePrivateIpsExcluded"] as const)
+      : []),
+  ];
+}
+
 export async function ensureProtection(deps: ProtectionDeps): Promise<void> {
-  const results = [await registerBlockRule(deps), await checkSiteAccess(deps)];
+  const settings = await deps.loadSettings();
+  const results = [await registerBlockRules(deps, settings), await checkSiteAccess(deps)];
   const problems = results.filter((problem) => problem !== null);
   await deps.setBadgeText(problems.length === 0 ? "" : "!");
-  await deps.setTitle(
-    [deps.getMessage("actionTitle"), ...problems.map((key) => deps.getMessage(key))].join("\n"),
-  );
+  const lines = [...problems, ...findNotices(settings)].map((key) => deps.getMessage(key));
+  await deps.setTitle([deps.getMessage("actionTitle"), ...lines].join("\n"));
 }
 
 // Chrome can fire several events close together (site access switched back and forth), and

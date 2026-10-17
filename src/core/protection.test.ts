@@ -1,21 +1,24 @@
 import { describe, expect, test } from "vitest";
-import { buildBlockRule } from "./block-rule.ts";
 import { createProtector, ensureProtection, type ProtectionDeps } from "./protection.ts";
+import { DEFAULT_SETTINGS, type Settings } from "./settings.ts";
 
 const WARNING_PAGE = "chrome-extension://abcdefghijklmnop/blocked.html";
 
 interface FakeBrowserOptions {
   readonly ruleUpdate?: "succeeds" | "fails";
   readonly allSitesAccess?: boolean | "check fails";
+  readonly settings?: Settings;
 }
 
 // Stands in for the browser APIs and records what ensureProtection asked of them.
 function createFakeBrowser({
   ruleUpdate = "succeeds",
   allSitesAccess = true,
+  settings = DEFAULT_SETTINGS,
 }: FakeBrowserOptions = {}) {
   const calls = {
-    ruleUpdates: [] as chrome.declarativeNetRequest.UpdateRuleOptions[],
+    removedRuleIds: [] as number[][],
+    addedRuleIds: [] as number[][],
     originChecks: [] as (readonly string[])[],
     badgeTexts: [] as string[],
     titles: [] as string[],
@@ -23,9 +26,16 @@ function createFakeBrowser({
   };
   const deps: ProtectionDeps = {
     warningPageUrl: WARNING_PAGE,
+    loadSettings: () => Promise.resolve(settings),
     // oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- mirrors Chrome's mutable UpdateRuleOptions
     updateDynamicRules: (options) => {
-      calls.ruleUpdates.push(options);
+      calls.removedRuleIds.push([...(options.removeRuleIds ?? [])]);
+      const added: number[] = [];
+      for (const rule of options.addRules ?? []) {
+        added.push(rule.id);
+      }
+      // Chrome does not care about the order of the rules, so neither do the tests.
+      calls.addedRuleIds.push(added.toSorted((a, b) => a - b));
       return ruleUpdate === "fails"
         ? Promise.reject(new Error("Invalid regex"))
         : Promise.resolve();
@@ -53,18 +63,75 @@ function createFakeBrowser({
 }
 
 describe("ensureProtection when protection works", () => {
-  test("replaces the block rule in one update and clears the badge", async () => {
+  test("replaces the block rules in one update and clears the badge", async () => {
     const { deps, calls } = createFakeBrowser();
 
     await ensureProtection(deps);
 
-    expect(calls.ruleUpdates).toEqual([
-      { removeRuleIds: [1], addRules: [buildBlockRule(WARNING_PAGE)] },
-    ]);
+    expect(calls.removedRuleIds).toEqual([[1, 2, 3, 4, 5, 6, 7, 8, 9]]);
+    expect(calls.addedRuleIds).toEqual([[1, 2, 3, 7]]);
     expect(calls.originChecks).toEqual([["<all_urls>"]]);
     expect(calls.badgeTexts).toEqual([""]);
     expect(calls.titles).toEqual(["<actionTitle>"]);
     expect(calls.errors).toEqual([]);
+  });
+});
+
+describe("ensureProtection with settings the user loosened: rules", () => {
+  test("registers only the rules the settings leave on, removing every rule first", async () => {
+    const { deps, calls } = createFakeBrowser({
+      settings: { blockUserinfo: false, blockIpHosts: true, excludePrivateIps: true },
+    });
+
+    await ensureProtection(deps);
+
+    expect(calls.removedRuleIds).toEqual([[1, 2, 3, 4, 5, 6, 7, 8, 9]]);
+    expect(calls.addedRuleIds).toEqual([[1, 3, 4, 5, 6, 8, 9]]);
+  });
+});
+
+describe("ensureProtection with settings the user loosened: tooltip", () => {
+  test.each([
+    {
+      name: "userinfo blocking is off",
+      settings: { blockUserinfo: false, blockIpHosts: true, excludePrivateIps: false },
+      title: "<actionTitle>\n<noticeUserinfoOff>",
+    },
+    {
+      name: "private addresses are excluded",
+      settings: { blockUserinfo: true, blockIpHosts: true, excludePrivateIps: true },
+      title: "<actionTitle>\n<noticePrivateIpsExcluded>",
+    },
+    {
+      // The exclusion has no effect while IP address hosts are not blocked at all.
+      name: "IP address blocking is off, with private addresses excluded",
+      settings: { blockUserinfo: true, blockIpHosts: false, excludePrivateIps: true },
+      title: "<actionTitle>\n<noticeIpHostsOff>",
+    },
+    {
+      name: "both are off",
+      settings: { blockUserinfo: false, blockIpHosts: false, excludePrivateIps: false },
+      title: "<actionTitle>\n<noticeUserinfoOff>\n<noticeIpHostsOff>",
+    },
+  ] as const)("adds a line, without !, when $name", async ({ settings, title }) => {
+    const { deps, calls } = createFakeBrowser({ settings });
+
+    await ensureProtection(deps);
+
+    expect(calls.badgeTexts).toEqual([""]);
+    expect(calls.titles).toEqual([title]);
+  });
+
+  test("lists the problems before the loosened settings", async () => {
+    const { deps, calls } = createFakeBrowser({
+      allSitesAccess: false,
+      settings: { blockUserinfo: false, blockIpHosts: true, excludePrivateIps: false },
+    });
+
+    await ensureProtection(deps);
+
+    expect(calls.badgeTexts).toEqual(["!"]);
+    expect(calls.titles).toEqual(["<actionTitle>\n<problemNoSiteAccess>\n<noticeUserinfoOff>"]);
   });
 });
 
@@ -159,5 +226,32 @@ describe("createProtector", () => {
     await protect();
 
     expect(calls.badgeTexts).toEqual(["", ""]);
+  });
+});
+
+describe("createProtector and settings", () => {
+  test("reads the settings again on every run, so a change applies on the next run", async () => {
+    const { deps, calls } = createFakeBrowser();
+    const saved: Settings[] = [
+      DEFAULT_SETTINGS,
+      { blockUserinfo: false, blockIpHosts: false, excludePrivateIps: false },
+    ];
+    let runs = 0;
+    const protect = createProtector({
+      ...deps,
+      loadSettings: () => {
+        const settings = saved[runs] ?? DEFAULT_SETTINGS;
+        runs += 1;
+        return Promise.resolve(settings);
+      },
+    });
+
+    await protect();
+    await protect();
+
+    expect(calls.addedRuleIds).toEqual([
+      [1, 2, 3, 7],
+      [1, 8],
+    ]);
   });
 });

@@ -15,12 +15,24 @@
     "message": "Blocking is off: set site access to \"On all sites\".",
     "description": "Tooltip line shown with the ! badge when the extension cannot access all sites."
   },
+  "noticeUserinfoOff": {
+    "message": "Blocking URLs with user info: off",
+    "description": "Tooltip line while the user has turned off blocking URLs with user info. No badge."
+  },
+  "noticeIpHostsOff": {
+    "message": "Blocking IP address hosts: off",
+    "description": "Tooltip line while the user has turned off blocking IP address hosts. No badge."
+  },
+  "noticePrivateIpsExcluded": {
+    "message": "Blocking IP address hosts: private IP addresses excluded",
+    "description": "Tooltip line while private IP addresses are excluded from blocking IP address hosts. No badge."
+  },
   "extensionName": {
     "message": "PunyGuard",
     "description": "Extension name."
   },
   "extensionDescription": {
-    "message": "Blocks navigation to internationalized domain names (IDN, xn--) and shows a warning page instead.",
+    "message": "Blocks navigation to URLs that disguise where they lead (internationalized domain names, URLs with user info and IP address hosts) and shows a warning page instead.",
     "description": "Extension description in the Chrome Web Store and chrome://extensions."
   },
   "pageTitle": {
@@ -32,12 +44,48 @@
     "description": "Main heading of the warning page."
   },
   "explanation": {
-    "message": "This page's address uses an internationalized domain name (IDN). Letters from other scripts can make such an address look like a familiar site, so PunyGuard blocks every IDN host.",
-    "description": "Why the page was blocked."
+    "message": "This page's address has a form used to disguise where it really leads.",
+    "description": "Why the page was blocked. A section for each reason follows when the URL can be read."
   },
   "unreadableUrl": {
     "message": "The address of the blocked page could not be read.",
     "description": "Shown instead of the details when the fragment does not hold an http(s) URL."
+  },
+  "headingIdnHost": {
+    "message": "Internationalized domain name (IDN)",
+    "description": "Heading of the IDN host reason on the warning page."
+  },
+  "explanationIdnHost": {
+    "message": "The host uses an internationalized domain name (IDN). Letters from other scripts can make such an address look like a familiar site, so PunyGuard blocks every IDN host.",
+    "description": "Why IDN hosts are blocked."
+  },
+  "headingUserinfo": {
+    "message": "URL with user info",
+    "description": "Heading of the userinfo reason on the warning page."
+  },
+  "explanationUserinfo": {
+    "message": "The part of the address before \"@\" is a user name, not the destination. Putting a familiar domain before \"@\" makes a link look as if it leads to that site.",
+    "description": "Why URLs with user info are blocked."
+  },
+  "labelUserinfo": {
+    "message": "User info (before \"@\")",
+    "description": "Label for the user info in the URL (user name, and any password masked as ***), shown as plain text."
+  },
+  "labelActualHost": {
+    "message": "Where it really leads",
+    "description": "Label for the host the URL really leads to."
+  },
+  "headingIpHost": {
+    "message": "IP address host",
+    "description": "Heading of the IP address host reason on the warning page."
+  },
+  "explanationIpHost": {
+    "message": "The address uses an IP address instead of a host name. An IP address does not tell you which site it is.",
+    "description": "Why IP address hosts are blocked."
+  },
+  "labelIpAddress": {
+    "message": "IP address",
+    "description": "Label for the IP address host."
   },
   "labelOriginalUrl": {
     "message": "Address",
@@ -122,5 +170,29 @@
   "scriptOther": {
     "message": "Other",
     "description": "Script name for anything not listed."
+  },
+  "optionsTitle": {
+    "message": "PunyGuard settings",
+    "description": "Title and heading of the options page."
+  },
+  "optionsIntro": {
+    "message": "Internationalized domain names (IDN) are always blocked. You can turn off the blocking below. Changes are saved at once and apply from the next navigation.",
+    "description": "Introduction on the options page."
+  },
+  "optionBlockUserinfo": {
+    "message": "Block URLs with user info",
+    "description": "Checkbox on the options page."
+  },
+  "optionBlockIpHosts": {
+    "message": "Block IP address hosts",
+    "description": "Checkbox on the options page."
+  },
+  "optionExcludePrivateIps": {
+    "message": "Except private IP addresses (devices on your local network, localhost and the like)",
+    "description": "Checkbox under the IP address host one; disabled while that is off."
+  },
+  "optionsSaveFailed": {
+    "message": "The settings could not be saved. The page shows the saved settings again.",
+    "description": "Shown when saving the settings fails."
   }
 }

@@ -20,20 +20,27 @@ test("shows the original URL, both forms of the host and each non-ASCII characte
   await expect(rows.nth(4).locator("td")).toHaveText(["ө", /Cyrillic|キリル文字/u, "U+04E9"]);
 });
 
-// The address bar shows the warning page's own URL, so the password must go from there too.
-test("drops a password from the original URL, on the page and in the address bar", async ({
+// The address bar shows the warning page's own URL, so the password must be masked there too.
+test("masks a password in the original URL, on the page and in the address bar", async ({
   extension,
   server,
 }) => {
   const page = await extension.context.newPage();
   await page.goto(server.idnUrl("/login").replace("://", "://user:secret@"));
 
-  await expect(page.locator("#original-url")).toHaveText(
-    server.idnUrl("/login").replace("://", "://user@"),
-  );
-  expect(page.url()).toBe(
-    `${extension.warningPageUrl}#${server.idnUrl("/login").replace("://", "://user@")}`,
-  );
+  const masked = server.idnUrl("/login").replace("://", "://user:***@");
+  await expect(page.locator("#original-url")).toHaveText(masked);
+  expect(page.url()).toBe(`${extension.warningPageUrl}#${masked}`);
+});
+
+// The block rules mask the password on the way, but any page can open the warning page with a
+// password in the fragment.
+test("masks a password in a fragment the warning page was opened with", async ({ extension }) => {
+  const page = await extension.context.newPage();
+  await page.goto(`${extension.warningPageUrl}#https://user:secret@example.com/`);
+
+  await expect(page.locator("#original-url")).toHaveText("https://user:***@example.com/");
+  expect(page.url()).toBe(`${extension.warningPageUrl}#https://user:***@example.com/`);
 });
 
 // Chrome cuts location.hash at the first ":~:" (a fragment directive).
