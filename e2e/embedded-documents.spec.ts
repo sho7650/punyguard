@@ -108,3 +108,22 @@ test.describe("embedded documents with user info", () => {
     });
   }
 });
+
+// Chrome lets a document embed one from its own origin with the same user info. The page itself
+// is blocked while user info blocking is on, so this only happens with it off.
+test.describe("embedded documents with the page's own user info", () => {
+  for (const element of ["iframe", "object", "embed"] as const) {
+    test(`a <${element}> loads, with user info blocking off`, async ({ extension, server }) => {
+      await saveSettings(
+        extension,
+        { blockUserinfo: false, blockIpHosts: true, excludePrivateIps: false },
+        [1, 3, 8, 9],
+      );
+      const page = await extension.context.newPage();
+      await page.goto(server.embeddingUrl("userinfo", element).replace("://", "://user@"));
+
+      await expect((await embeddedFrame(page)).locator("h1")).toHaveText(EMBEDDED_CONTENT);
+      expect(server.embeddedRequests).toEqual([EMBEDDED_PATH]);
+    });
+  }
+});
