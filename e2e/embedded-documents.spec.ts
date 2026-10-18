@@ -3,12 +3,7 @@
 import { saveSettings, type Extension } from "./support/extension.ts";
 import { embeddedFrame } from "./support/embedded-frame.ts";
 import { expect, test } from "./support/fixtures.ts";
-import {
-  EMBEDDED_CONTENT,
-  EMBEDDED_PATH,
-  type EmbedElement,
-  type TestServer,
-} from "./support/server.ts";
+import { EMBEDDED_CONTENT, EMBEDDED_PATH, type TestServer } from "./support/server.ts";
 
 // Chrome refuses an embedded document whose URL has user info before any request goes out, and
 // PunyGuard's redirect must not be what stops it. page.goto waits for the load event, which
@@ -16,10 +11,10 @@ import {
 async function expectUserinfoEmbedRefused(
   extension: Extension,
   server: TestServer,
-  element: EmbedElement,
+  pageUrl: string,
 ): Promise<void> {
   const page = await extension.context.newPage();
-  await page.goto(server.embeddingUrl("userinfo", element));
+  await page.goto(pageUrl);
 
   await expect(page.locator("#outer")).toBeVisible();
   expect(server.embeddedRequests).toEqual([]);
@@ -92,7 +87,7 @@ test.describe("embedded documents with user info", () => {
       extension,
       server,
     }) => {
-      await expectUserinfoEmbedRefused(extension, server, element);
+      await expectUserinfoEmbedRefused(extension, server, server.embeddingUrl("userinfo", element));
     });
 
     test(`a <${element}> is refused by Chrome, with user info blocking off`, async ({
@@ -104,13 +99,14 @@ test.describe("embedded documents with user info", () => {
         { blockUserinfo: false, blockIpHosts: true, excludePrivateIps: false },
         [1, 3, 8, 9],
       );
-      await expectUserinfoEmbedRefused(extension, server, element);
+      await expectUserinfoEmbedRefused(extension, server, server.embeddingUrl("userinfo", element));
     });
   }
 });
 
-// Chrome lets a document embed one from its own origin with the same user info. The page itself
-// is blocked while user info blocking is on, so this only happens with it off.
+// Chrome lets a document embed one from its own origin with the same user info, and only from its
+// own origin. The page itself is blocked while user info blocking is on, so this only happens
+// with it off.
 test.describe("embedded documents with the page's own user info", () => {
   for (const element of ["iframe", "object", "embed"] as const) {
     test(`a <${element}> loads, with user info blocking off`, async ({ extension, server }) => {
@@ -124,6 +120,22 @@ test.describe("embedded documents with the page's own user info", () => {
 
       await expect((await embeddedFrame(page)).locator("h1")).toHaveText(EMBEDDED_CONTENT);
       expect(server.embeddedRequests).toEqual([EMBEDDED_PATH]);
+    });
+
+    test(`a <${element}> from another origin with the same user info is refused`, async ({
+      extension,
+      server,
+    }) => {
+      await saveSettings(
+        extension,
+        { blockUserinfo: false, blockIpHosts: true, excludePrivateIps: false },
+        [1, 3, 8, 9],
+      );
+      await expectUserinfoEmbedRefused(
+        extension,
+        server,
+        server.embeddingUrl("localhostUserinfo", element).replace("://", "://user@"),
+      );
     });
   }
 });

@@ -16,7 +16,9 @@ export const EMBEDDED_CONTENT = "EMBEDDED CONTENT REACHED";
 export const EMBEDDED_PATH = "/embedded";
 
 /** Where an embedding page points its embedded document. */
-export type EmbedTarget = "idn" | "ip" | "userinfo" | "ascii";
+// "userinfo" is on the ASCII host and "localhostUserinfo" on localhost, so the two share their
+// user info but not their origin.
+export type EmbedTarget = "idn" | "ip" | "userinfo" | "localhostUserinfo" | "ascii";
 /** The element that embeds the document. */
 export type EmbedElement = "iframe" | "object" | "embed";
 
@@ -83,7 +85,7 @@ function embeddingPath(target: EmbedTarget, element: EmbedElement): string {
 function embeddingRoutes(
   targetUrl: (target: EmbedTarget) => string,
 ): Readonly<Record<string, Route>> {
-  const targets: readonly EmbedTarget[] = ["idn", "ip", "userinfo", "ascii"];
+  const targets: readonly EmbedTarget[] = ["idn", "ip", "userinfo", "localhostUserinfo", "ascii"];
   const elements: readonly EmbedElement[] = ["iframe", "object", "embed"];
   return Object.fromEntries(
     targets.flatMap((target) =>
@@ -95,6 +97,17 @@ function embeddingRoutes(
       ]),
     ),
   );
+}
+
+function embeddedUrl(target: EmbedTarget, port: number): string {
+  const authorities: Readonly<Record<EmbedTarget, string>> = {
+    idn: IDN_HOST,
+    ip: "127.0.0.1",
+    userinfo: `user@${ASCII_HOST}`,
+    localhostUserinfo: "user@localhost",
+    ascii: ASCII_HOST,
+  };
+  return `http://${authorities[target]}:${port}${EMBEDDED_PATH}`;
 }
 
 async function listen(server: Server): Promise<number> {
@@ -128,15 +141,9 @@ export async function startServer(): Promise<TestServer> {
   let port = 0;
   const idnUrl = (path: string): string => `http://${IDN_HOST}:${port}${path}`;
   const asciiUrl = (path: string): string => `http://${ASCII_HOST}:${port}${path}`;
-  const embeddedUrls: Readonly<Record<EmbedTarget, () => string>> = {
-    idn: () => idnUrl(EMBEDDED_PATH),
-    ip: () => `http://127.0.0.1:${port}${EMBEDDED_PATH}`,
-    userinfo: () => asciiUrl(EMBEDDED_PATH).replace("://", "://user@"),
-    ascii: () => asciiUrl(EMBEDDED_PATH),
-  };
   const routes = {
     ...asciiRoutes(idnUrl),
-    ...embeddingRoutes((target) => embeddedUrls[target]()),
+    ...embeddingRoutes((target) => embeddedUrl(target, port)),
   };
 
   const server = createServer((request, response) => {
