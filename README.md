@@ -25,7 +25,7 @@ Any check based on how similar letters look can miss a character like this. Puny
 
 - **Legitimate IDNs are blocked too**, such as Japanese domains like `日本語.jp`. IDN blocking cannot be turned off, and there is no allowlist and no way to continue to the page ([ADR-0001](docs/adr/0001-block-all-idn-hosts.md)).
 - Blocking URLs with user info and IP address hosts can be turned off in the [settings](#settings). By default, IP address host blocking also stops private IP addresses, such as a router's admin page or `127.0.0.1`; the settings can exclude them ([ADR-0003](docs/adr/0003-userinfo-and-ip-hosts-can-be-turned-off.md)).
-- A blocked embedded document shows the warning page inside the embedding. An embedded URL with user info is the exception: Chrome itself refuses to load it, so no warning page appears. Chrome does this whatever PunyGuard's settings are. The one exception: if the page itself was opened with the same user info, Chrome lets an embedding from the same site with that same user info load. That can only happen while blocking URLs with user info is off, since the page itself is blocked otherwise.
+- A blocked embedded document shows the warning page inside the embedding. An embedded URL with user info is the exception: Chrome itself refuses to load it, so no warning page appears. Chrome does this whatever PunyGuard's settings are. The one exception: if the page itself was opened with the same user info, Chrome lets an embedding from the same origin (same scheme, host and port) with that same user info load. That can only happen while blocking URLs with user info is off, since the page itself is blocked otherwise.
 - The warning page shows the original URL (as text, not a link, and with any password masked as `***`) and a section for each reason it was blocked:
   - IDN host: the host in Unicode and Punycode, and each non-ASCII character with its script and code point
   - URL with user info: the user name before `@`, and where the URL really leads
@@ -57,7 +57,7 @@ Click the PunyGuard icon in the toolbar to open the settings (or **Extension opt
 
 - Private IP addresses are those with no route on the internet: `0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10`, `127.0.0.0/8`, `169.254.0.0/16`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`, `fc00::/7`, `fe80::/10`, and the IPv4-mapped IPv6 forms of those IPv4 ranges.
 - Even when they are excluded, a URL with user info such as `http://admin@192.168.0.1/` is still blocked as a URL with user info.
-- Turning off **Block URLs with user info** does not let an embedded document (iframe, `<object>`, `<embed>`) with user info load, because Chrome itself refuses it, unless the page itself was opened with the same user info on the same site.
+- Turning off **Block URLs with user info** does not let an embedded document (iframe, `<object>`, `<embed>`) with user info load, because Chrome itself refuses it, unless the page itself was opened with the same user info on the same origin (same scheme, host and port).
 - IDN host blocking has no setting.
 - Each setting loosened from the default adds a line to the toolbar icon's tooltip (without the `!` badge).
 - The settings are kept in `chrome.storage.local` on this device and are not synced. If the saved settings are broken, PunyGuard runs with the defaults (everything blocked).
