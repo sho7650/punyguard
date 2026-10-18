@@ -15,16 +15,17 @@ Any check based on how similar letters look can miss a character like this. Puny
 
 ## What it blocks
 
-| Blocked                                                             | Not blocked                                                              |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Hosts with any `xn--` label, including the top-level domain         | Non-ASCII characters in the path or query (`ja.wikipedia.org/wiki/東京`) |
-| URLs with user info (`user@`, `user:pass@`)                         | Host names such as `localhost`                                           |
-| IPv4 and IPv6 addresses as the host                                 | Images, scripts and other subresources                                   |
-| Whole pages and iframes                                             |                                                                          |
-| Clicks, typed addresses, redirects and links opened from other apps |                                                                          |
+| Blocked                                                             | Not blocked                                                                    |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Hosts with any `xn--` label, including the top-level domain         | Non-ASCII characters in the path or query (`ja.wikipedia.org/wiki/東京`)       |
+| URLs with user info (`user@`, `user:pass@`)                         | Host names such as `localhost`                                                 |
+| IPv4 and IPv6 addresses as the host                                 | Images, scripts and other subresources (except through `<object>` / `<embed>`) |
+| Whole pages and embedded documents (iframe, `<object>`, `<embed>`)  |                                                                                |
+| Clicks, typed addresses, redirects and links opened from other apps |                                                                                |
 
 - **Legitimate IDNs are blocked too**, such as Japanese domains like `日本語.jp`. IDN blocking cannot be turned off, and there is no allowlist and no way to continue to the page ([ADR-0001](docs/adr/0001-block-all-idn-hosts.md)).
 - Blocking URLs with user info and IP address hosts can be turned off in the [settings](#settings). By default, IP address host blocking also stops private IP addresses, such as a router's admin page or `127.0.0.1`; the settings can exclude them ([ADR-0003](docs/adr/0003-userinfo-and-ip-hosts-can-be-turned-off.md)).
+- A blocked embedded document shows the warning page inside the embedding. An embedded URL with user info is the exception: Chrome itself refuses to load it, so no warning page appears. Chrome does this whatever PunyGuard's settings are.
 - The warning page shows the original URL (as text, not a link, and with any password masked as `***`) and a section for each reason it was blocked:
   - IDN host: the host in Unicode and Punycode, and each non-ASCII character with its script and code point
   - URL with user info: the user name before `@`, and where the URL really leads
@@ -56,6 +57,7 @@ Click the PunyGuard icon in the toolbar to open the settings (or **Extension opt
 
 - Private IP addresses are those with no route on the internet: `0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10`, `127.0.0.0/8`, `169.254.0.0/16`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`, `fc00::/7`, `fe80::/10`, and the IPv4-mapped IPv6 forms of those IPv4 ranges.
 - Even when they are excluded, a URL with user info such as `http://admin@192.168.0.1/` is still blocked as a URL with user info.
+- Turning off **Block URLs with user info** does not let an embedded document (iframe, `<object>`, `<embed>`) with user info load, because Chrome itself refuses it.
 - IDN host blocking has no setting.
 - Each setting loosened from the default adds a line to the toolbar icon's tooltip (without the `!` badge).
 - The settings are kept in `chrome.storage.local` on this device and are not synced. If the saved settings are broken, PunyGuard runs with the defaults (everything blocked).
@@ -96,6 +98,9 @@ Settings loosened from the default (blocking URLs with user info or IP address h
 ## Known limitations
 
 - If the warning page is the first page of a new tab, and you go to another page and then come back with the browser's back button, **Go back** is shown but does nothing (there is no earlier page). **Close this tab** still works.
+- Navigation that a service worker answers is not blocked: the Chrome mechanism PunyGuard uses (declarativeNetRequest) does not apply to it.
+  - IDN hosts and IP address hosts: a site you visited before installing PunyGuard (or while its block was off) may have registered a service worker, and navigation to that site may then not be blocked. Once PunyGuard is installed, a blocked site's pages never load, so no new service worker gets registered. Deleting the site's data in `chrome://settings/content/all` removes the worker.
+  - URLs with user info: the block is on the URL, and the real site itself opens normally. An attacker who gets you to visit their site once can register a service worker there, and a URL such as `https://www.apple.com@evil.example/` may then not be blocked, even with PunyGuard installed ([P3](docs/decisions.md#p3-navigation-that-a-service-worker-answers-stays-unblocked)).
 
 ## Development
 

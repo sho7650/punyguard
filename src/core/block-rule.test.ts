@@ -230,9 +230,15 @@ describe("buildBlockRules: ASCII hosts", () => {
 });
 
 describe("buildBlockRules: resource types", () => {
-  test("applies only to page navigations and iframes, not to subresources", () => {
-    for (const rule of buildBlockRules(WARNING_PAGE, DEFAULT_SETTINGS)) {
-      expect(new Set(rule.condition.resourceTypes)).toEqual(new Set(["main_frame", "sub_frame"]));
+  // Between them, these settings produce every rule buildBlockRules can make.
+  test.each([
+    DEFAULT_SETTINGS,
+    { blockUserinfo: false, blockIpHosts: true, excludePrivateIps: true },
+  ])("applies only to page navigations and embedded documents, with %o", (settings) => {
+    for (const rule of buildBlockRules(WARNING_PAGE, settings)) {
+      expect(new Set(rule.condition.resourceTypes)).toEqual(
+        new Set(["main_frame", "sub_frame", "object"]),
+      );
     }
   });
 });

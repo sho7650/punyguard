@@ -37,9 +37,11 @@ export const BLOCK_RULE_IDS: readonly number[] = [
   IP_HOST_PASSWORD_RULE_ID,
 ];
 
+// A document in an <object> or an <embed> is requested as "object", not as "sub_frame".
 const RESOURCE_TYPES: NonNullable<chrome.declarativeNetRequest.RuleCondition["resourceTypes"]> = [
   "main_frame",
   "sub_frame",
+  "object",
 ];
 
 // Chrome evaluates regexFilter as RE2, so no lookarounds or backreferences; the E2E tests check

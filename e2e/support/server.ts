@@ -10,13 +10,26 @@ export const IDN_CONTENT = "IDN CONTENT REACHED";
 // A documentation address (RFC 5737). Blocking redirects before any connection, so nothing
 // needs to answer there; a test that expects it to load would hang instead.
 export const PUBLIC_IP_URL = "http://203.0.113.5/login";
+export const EMBEDDED_CONTENT = "EMBEDDED CONTENT REACHED";
+// The path that the embedded documents on the IP address host and the URL with user info load.
+// The user info never reaches the server, so the path is what tells these requests apart.
+export const EMBEDDED_PATH = "/embedded";
+
+/** Where an embedding page points its embedded document. */
+export type EmbedTarget = "idn" | "ip" | "userinfo" | "ascii";
+/** The element that embeds the document. */
+export type EmbedElement = "iframe" | "object" | "embed";
 
 export interface TestServer {
   readonly port: number;
   /** Paths requested on the IDN host; any entry means a request got past the block. */
   readonly idnRequests: readonly string[];
+  /** Requests for EMBEDDED_PATH on any other host; any entry means an embedded document loaded. */
+  readonly embeddedRequests: readonly string[];
   idnUrl: (path: string) => string;
   asciiUrl: (path: string) => string;
+  /** The page that embeds the target's document with the element. */
+  embeddingUrl: (target: EmbedTarget, element: EmbedElement) => string;
   close: () => Promise<void>;
 }
 
@@ -56,6 +69,34 @@ function asciiRoutes(idnUrl: (path: string) => string): Readonly<Record<string, 
   };
 }
 
+const EMBED_MARKUP: Readonly<Record<EmbedElement, (url: string) => string>> = {
+  iframe: (url) => `<iframe src="${url}"></iframe>`,
+  object: (url) => `<object data="${url}"></object>`,
+  embed: (url) => `<embed src="${url}">`,
+};
+
+function embeddingPath(target: EmbedTarget, element: EmbedElement): string {
+  return `/embedding/${target}/${element}`;
+}
+
+// Pages on the ASCII host that embed a document from each target with each element.
+function embeddingRoutes(
+  targetUrl: (target: EmbedTarget) => string,
+): Readonly<Record<string, Route>> {
+  const targets: readonly EmbedTarget[] = ["idn", "ip", "userinfo", "ascii"];
+  const elements: readonly EmbedElement[] = ["iframe", "object", "embed"];
+  return Object.fromEntries(
+    targets.flatMap((target) =>
+      elements.map((element): [string, Route] => [
+        embeddingPath(target, element),
+        (response) => {
+          html(response, `<p id="outer">outer</p>${EMBED_MARKUP[element](targetUrl(target))}`);
+        },
+      ]),
+    ),
+  );
+}
+
 async function listen(server: Server): Promise<number> {
   await new Promise<void>((resolve) => {
     server.listen(0, "127.0.0.1", resolve);
@@ -83,10 +124,20 @@ function close(server: Server): Promise<void> {
 
 export async function startServer(): Promise<TestServer> {
   const idnRequests: string[] = [];
+  const embeddedRequests: string[] = [];
   let port = 0;
   const idnUrl = (path: string): string => `http://${IDN_HOST}:${port}${path}`;
   const asciiUrl = (path: string): string => `http://${ASCII_HOST}:${port}${path}`;
-  const routes = asciiRoutes(idnUrl);
+  const embeddedUrls: Readonly<Record<EmbedTarget, () => string>> = {
+    idn: () => idnUrl(EMBEDDED_PATH),
+    ip: () => `http://127.0.0.1:${port}${EMBEDDED_PATH}`,
+    userinfo: () => asciiUrl(EMBEDDED_PATH).replace("://", "://user@"),
+    ascii: () => asciiUrl(EMBEDDED_PATH),
+  };
+  const routes = {
+    ...asciiRoutes(idnUrl),
+    ...embeddingRoutes((target) => embeddedUrls[target]()),
+  };
 
   const server = createServer((request, response) => {
     const host = (request.headers.host ?? "").replace(/:\d+$/u, "");
@@ -96,7 +147,13 @@ export async function startServer(): Promise<TestServer> {
       html(response, `<h1>${IDN_CONTENT}</h1>`);
       return;
     }
-    const route = routes[new URL(path, asciiUrl("/")).pathname];
+    const pathname = new URL(path, asciiUrl("/")).pathname;
+    if (pathname === EMBEDDED_PATH) {
+      embeddedRequests.push(path);
+      html(response, `<h1>${EMBEDDED_CONTENT}</h1>`);
+      return;
+    }
+    const route = routes[pathname];
     if (route === undefined) {
       html(response, `<h1>ASCII PAGE</h1>`);
     } else {
@@ -105,5 +162,13 @@ export async function startServer(): Promise<TestServer> {
   });
   port = await listen(server);
 
-  return { port, idnRequests, idnUrl, asciiUrl, close: () => close(server) };
+  return {
+    port,
+    idnRequests,
+    embeddedRequests,
+    idnUrl,
+    asciiUrl,
+    embeddingUrl: (target, element) => asciiUrl(embeddingPath(target, element)),
+    close: () => close(server),
+  };
 }
