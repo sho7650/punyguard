@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/sho7650/punyguard/compare/v0.2.0...v0.3.0) (2026-10-18)
+
+
+### Features
+
+* block documents embedded with object and embed ([8a2706b](https://github.com/sho7650/punyguard/commit/8a2706b11a7461d3933407f2f26c19e0cc2597c4))
+* block documents embedded with object and embed ([fe76134](https://github.com/sho7650/punyguard/commit/fe7613402b37615222c219d584e3ef2f926c4507))
+
 ## [0.2.0](https://github.com/sho7650/punyguard/compare/v0.1.1...v0.2.0) (2026-10-17)
 
 
