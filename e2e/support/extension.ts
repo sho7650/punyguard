@@ -6,7 +6,7 @@ import path from "node:path";
 import { chromium, expect, type BrowserContext, type Worker } from "@playwright/test";
 import { contentScriptRegistration } from "../../src/core/content-script.ts";
 import { loadSettings, type Settings } from "../../src/core/settings.ts";
-import { ASCII_HOST, IDN_HOST } from "./server.ts";
+import { BROWSER_ARGS } from "./browser-flags.ts";
 
 // The rules registered with the default settings: IDN hosts, userinfo and IP address hosts.
 export const DEFAULT_RULE_IDS: readonly number[] = [1, 2, 3, 7];
@@ -28,9 +28,12 @@ export function removeUserDataDir(userDataDir: string): void {
   rmSync(userDataDir, { recursive: true, force: true });
 }
 
+// extraArgs adds switches, such as secureOriginArgs for the Service Worker tests, which launch
+// PunyGuard on a profile seeded without it (service-worker-profile.ts).
 export async function launchExtension(
   userDataDir: string,
   env: Readonly<Record<string, string>> = {},
+  extraArgs: readonly string[] = [],
 ): Promise<Extension> {
   const context = await chromium.launchPersistentContext(userDataDir, {
     // Only the new headless mode (or a headed browser) loads extensions; the default
@@ -39,7 +42,8 @@ export async function launchExtension(
     args: [
       `--disable-extensions-except=${DIST}`,
       `--load-extension=${DIST}`,
-      `--host-resolver-rules=MAP ${IDN_HOST} 127.0.0.1, MAP ${ASCII_HOST} 127.0.0.1`,
+      ...BROWSER_ARGS,
+      ...extraArgs,
     ],
     env: { ...process.env, ...env },
   });
