@@ -4,7 +4,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium, expect, type BrowserContext, type Worker } from "@playwright/test";
-import type { Settings } from "../../src/core/settings.ts";
+import { contentScriptRegistration } from "../../src/core/content-script.ts";
+import { loadSettings, type Settings } from "../../src/core/settings.ts";
 import { ASCII_HOST, IDN_HOST } from "./server.ts";
 
 // The rules registered with the default settings: IDN hosts, userinfo and IP address hosts.
@@ -64,7 +65,7 @@ export async function dynamicRuleIds(worker: Worker): Promise<ReadonlySet<number
 }
 
 // Writes the settings as the options page does and waits until the service worker has
-// registered the rules they call for.
+// registered the rules and the content script they call for.
 export async function saveSettings(
   extension: Extension,
   saved: Settings,
@@ -81,6 +82,26 @@ export async function saveRawSettings(
 ): Promise<void> {
   await extension.worker.evaluate((settings) => chrome.storage.local.set({ settings }), saved);
   await expect.poll(() => dynamicRuleIds(extension.worker)).toEqual(new Set(expectedRuleIds));
+  // The content script is updated after the rules. Until then it still blocks by the earlier
+  // settings, so a navigation right away could be sent to the warning page. Settings that
+  // cannot be used fall back to the defaults, as in the extension.
+  const settings = await loadSettings(
+    () => Promise.resolve(saved),
+    () => {
+      // Broken settings are what saveRawSettings is for; nothing to report.
+    },
+  );
+  const { js } = contentScriptRegistration(settings);
+  await expect.poll(() => registeredContentScriptFiles(extension.worker)).toEqual(js);
+}
+
+// The files of the registered content script, the first of which declares the settings
+// (src/core/content-script.ts)
+function registeredContentScriptFiles(worker: Worker): Promise<readonly string[] | undefined> {
+  return worker.evaluate(async () => {
+    const [script] = await chrome.scripting.getRegisteredContentScripts();
+    return script?.js;
+  });
 }
 
 export function toolbarState(worker: Worker): Promise<{ badge: string; title: string }> {

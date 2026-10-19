@@ -1,64 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { createProtector, ensureProtection, type ProtectionDeps } from "./protection.ts";
+import { createProtector, ensureProtection } from "./protection.ts";
 import { DEFAULT_SETTINGS, type Settings } from "./settings.ts";
-
-const WARNING_PAGE = "chrome-extension://abcdefghijklmnop/blocked.html";
-
-interface FakeBrowserOptions {
-  readonly ruleUpdate?: "succeeds" | "fails";
-  readonly allSitesAccess?: boolean;
-  readonly settings?: Settings;
-}
-
-// Stands in for the browser APIs and records what ensureProtection asked of them.
-function createFakeBrowser({
-  ruleUpdate = "succeeds",
-  allSitesAccess = true,
-  settings = DEFAULT_SETTINGS,
-}: FakeBrowserOptions = {}) {
-  const calls = {
-    removedRuleIds: [] as number[][],
-    addedRuleIds: [] as number[][],
-    originChecks: [] as (readonly string[])[],
-    badgeTexts: [] as string[],
-    titles: [] as string[],
-    errors: [] as { message: string; error: unknown }[],
-  };
-  const deps: ProtectionDeps = {
-    warningPageUrl: WARNING_PAGE,
-    loadSettings: () => Promise.resolve(settings),
-    // oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- mirrors Chrome's mutable UpdateRuleOptions
-    updateDynamicRules: (options) => {
-      calls.removedRuleIds.push([...(options.removeRuleIds ?? [])]);
-      const added: number[] = [];
-      for (const rule of options.addRules ?? []) {
-        added.push(rule.id);
-      }
-      // Chrome does not care about the order of the rules, so neither do the tests.
-      calls.addedRuleIds.push(added.toSorted((a, b) => a - b));
-      return ruleUpdate === "fails"
-        ? Promise.reject(new Error("Internal error while updating dynamic rules."))
-        : Promise.resolve();
-    },
-    containsOrigins: (origins) => {
-      calls.originChecks.push(origins);
-      return Promise.resolve(allSitesAccess);
-    },
-    setBadgeText: (text) => {
-      calls.badgeTexts.push(text);
-      return Promise.resolve();
-    },
-    setTitle: (title) => {
-      calls.titles.push(title);
-      return Promise.resolve();
-    },
-    getMessage: (key) => `<${key}>`,
-    logError: (message, error) => {
-      calls.errors.push({ message, error });
-    },
-  };
-  return { deps, calls };
-}
+import { createFakeBrowser } from "./test-support/fake-browser.ts";
 
 describe("ensureProtection when protection works", () => {
   test("replaces the block rules in one update and clears the badge", async () => {

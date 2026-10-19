@@ -1,14 +1,15 @@
 // Builds the unpacked extension into dist/.
 // Usage: node scripts/build.ts [--watch]
 import { readdirSync, statSync, watch } from "node:fs";
-import { cp, rm } from "node:fs/promises";
+import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import * as esbuild from "esbuild";
 import packageJson from "../package.json" with { type: "json" };
+import { settingsScripts } from "../src/core/content-script.ts";
 
 const OUT_DIR = "dist";
 
-const ENTRY_POINTS = ["src/background.ts", "src/blocked.ts", "src/options.ts"];
+const ENTRY_POINTS = ["src/background.ts", "src/blocked.ts", "src/content.ts", "src/options.ts"];
 
 interface StaticFile {
   readonly from: string;
@@ -93,15 +94,28 @@ function watchStaticFile(file: StaticFile, onChange: () => void): void {
   });
 }
 
+// The scripts that hand the content script its settings, one per combination of settings
+// (src/core/content-script.ts). They only change with the source, so watch mode writes them once.
+async function writeSettingsScripts(): Promise<void> {
+  await Promise.all(
+    settingsScripts().map(async ({ path: file, source }) => {
+      await mkdir(path.dirname(`${OUT_DIR}/${file}`), { recursive: true });
+      await writeFile(`${OUT_DIR}/${file}`, source);
+    }),
+  );
+}
+
 async function buildOnce(): Promise<void> {
   await esbuild.build(buildOptions);
   await copyStaticFiles();
+  await writeSettingsScripts();
 }
 
 async function buildAndWatch(): Promise<void> {
   const context = await esbuild.context(buildOptions);
   await context.watch();
   await copyStaticFiles();
+  await writeSettingsScripts();
   // esbuild only watches the bundled sources, so the static files need their own watcher.
   const enqueue = createSerialQueue();
   for (const file of STATIC_FILES) {

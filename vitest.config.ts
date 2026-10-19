@@ -20,6 +20,7 @@ export default defineConfig({
         "src/**/test-support/**",
         "src/background.ts",
         "src/blocked.ts",
+        "src/content.ts",
         "src/options.ts",
         "src/localize.ts",
         "src/settings-storage.ts",

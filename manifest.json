@@ -13,7 +13,9 @@
   },
   "permissions": [
     "declarativeNetRequest",
-    "storage"
+    "scripting",
+    "storage",
+    "webNavigation"
   ],
   "host_permissions": [
     "<all_urls>"
