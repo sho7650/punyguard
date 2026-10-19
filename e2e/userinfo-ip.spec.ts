@@ -157,11 +157,7 @@ test.describe("canonical URLs", () => {
   });
 
   test("an IPv4-mapped IPv6 host becomes hex groups", async ({ extension }) => {
-    await saveSettings(
-      extension,
-      { blockUserinfo: true, blockIpHosts: true, excludePrivateIps: false },
-      [1, 2, 3, 7],
-    );
+    // The default settings do not exclude private IP addresses, so 192.168.0.1 is blocked.
     const page = await extension.context.newPage();
     await page.goto("http://[::ffff:192.168.0.1]/");
 

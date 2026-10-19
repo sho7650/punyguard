@@ -17,12 +17,9 @@ const runProtection = createProtector({
   },
 });
 
+// runProtection does not reject: ensureProtection handles every failure it can meet itself.
 function protect(): void {
-  runProtection().catch((error: unknown) => {
-    // ensureProtection handles rule and permission failures itself; only the badge or
-    // tooltip update can end up here.
-    console.error("Failed to update the toolbar icon", error);
-  });
+  void runProtection();
 }
 
 // onInstalled fires on install, update and reload; onStartup on every browser start.

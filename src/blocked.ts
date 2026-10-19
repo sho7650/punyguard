@@ -9,14 +9,18 @@ import { loadSavedSettings } from "./settings-storage.ts";
 
 function requireElement<T extends HTMLElement>(id: string, type: new () => T): T {
   const element = document.querySelector(`#${id}`);
+  // Only narrows the type: blocked.html ships with this script, so a missing element is a
+  // build mistake, not something that happens at run time.
   if (!(element instanceof type)) {
     throw new TypeError(`blocked.html has no <${type.name}> with id "${id}"`);
   }
   return element;
 }
 
+// Every name scriptOf returns has a script<Name> message, and src/locales.test.ts checks both
+// catalogs for them, so the lookup never comes back empty.
 function scriptName(script: string): string {
-  return chrome.i18n.getMessage(`script${script}`) || script;
+  return chrome.i18n.getMessage(`script${script}`);
 }
 
 function characterRow({ character, script, codePoint }: HostCharacter): HTMLTableRowElement {
@@ -75,6 +79,8 @@ async function showReasons(parts: BlockedUrlParts): Promise<void> {
 
 async function closeThisTab(): Promise<void> {
   const tab = await chrome.tabs.getCurrent();
+  // Only narrows the type: the buttons show only in a top-level window (showActions), which is
+  // a tab, so the tab and its ID are always there.
   if (tab?.id !== undefined) {
     await chrome.tabs.remove(tab.id);
   }

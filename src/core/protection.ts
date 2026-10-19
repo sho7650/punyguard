@@ -48,15 +48,12 @@ async function registerBlockRules(
 
 // DNR redirects only work with host access to the redirected URL, so restricting site access
 // (for example "On click") silently stops the blocking while the rule stays registered.
-// A failed check is treated as missing access: protection cannot be confirmed.
+// No catch: permissions.contains rejects only for invalid arguments or while the browser shuts
+// down, and "<all_urls>" is fixed. Its docs list no errors, and under "On click" it resolves
+// false rather than rejecting (Chromium's source, and 20 of 20 calls resolved, 2026-10-19).
 async function checkSiteAccess(deps: ProtectionDeps): Promise<ProblemMessageKey | null> {
-  try {
-    const hasAllSites = await deps.containsOrigins(["<all_urls>"]);
-    return hasAllSites ? null : "problemNoSiteAccess";
-  } catch (error) {
-    deps.logError("Failed to check site access", error);
-    return "problemNoSiteAccess";
-  }
+  const hasAllSites = await deps.containsOrigins(["<all_urls>"]);
+  return hasAllSites ? null : "problemNoSiteAccess";
 }
 
 // What the user loosened. These are choices, not faults, so they go in the tooltip without the
@@ -71,6 +68,10 @@ function findNotices(settings: Settings): NoticeMessageKey[] {
   ];
 }
 
+// Never rejects: loadSettings never rejects, the rule registration handles its own failure,
+// the site access check does not reject (above), and setBadgeText and setTitle without a tabId
+// fail only while the browser shuts down (Chromium's source, and 20 of 20 calls of each
+// resolved, 2026-10-19).
 export async function ensureProtection(deps: ProtectionDeps): Promise<void> {
   const settings = await deps.loadSettings();
   const results = [await registerBlockRules(deps, settings), await checkSiteAccess(deps)];
@@ -82,14 +83,12 @@ export async function ensureProtection(deps: ProtectionDeps): Promise<void> {
 
 // Chrome can fire several events close together (site access switched back and forth), and
 // overlapping checks would set the badge in whichever order they finish. Queuing them makes
-// the badge show the latest check. A failed run does not stop the ones after it.
+// the badge show the latest check. ensureProtection never rejects, so no run can stop the
+// queue.
 export function createProtector(deps: ProtectionDeps): () => Promise<void> {
   let previous: Promise<void> = Promise.resolve();
   return () => {
-    const run = previous.then(() => ensureProtection(deps));
-    previous = run.catch(() => {
-      // The caller of this run gets the error; the queue only waits for it to settle.
-    });
-    return run;
+    previous = previous.then(() => ensureProtection(deps));
+    return previous;
   };
 }

@@ -6,7 +6,7 @@ const WARNING_PAGE = "chrome-extension://abcdefghijklmnop/blocked.html";
 
 interface FakeBrowserOptions {
   readonly ruleUpdate?: "succeeds" | "fails";
-  readonly allSitesAccess?: boolean | "check fails";
+  readonly allSitesAccess?: boolean;
   readonly settings?: Settings;
 }
 
@@ -37,14 +37,12 @@ function createFakeBrowser({
       // Chrome does not care about the order of the rules, so neither do the tests.
       calls.addedRuleIds.push(added.toSorted((a, b) => a - b));
       return ruleUpdate === "fails"
-        ? Promise.reject(new Error("Invalid regex"))
+        ? Promise.reject(new Error("Internal error while updating dynamic rules."))
         : Promise.resolve();
     },
     containsOrigins: (origins) => {
       calls.originChecks.push(origins);
-      return allSitesAccess === "check fails"
-        ? Promise.reject(new Error("Permission check failed"))
-        : Promise.resolve(allSitesAccess);
+      return Promise.resolve(allSitesAccess);
     },
     setBadgeText: (text) => {
       calls.badgeTexts.push(text);
@@ -144,7 +142,10 @@ describe("ensureProtection when protection is off", () => {
     expect(calls.badgeTexts).toEqual(["!"]);
     expect(calls.titles).toEqual(["<actionTitle>\n<problemRuleNotRegistered>"]);
     expect(calls.errors).toEqual([
-      { message: "Failed to register the block rule", error: new Error("Invalid regex") },
+      {
+        message: "Failed to register the block rule",
+        error: new Error("Internal error while updating dynamic rules."),
+      },
     ]);
   });
 
@@ -165,18 +166,6 @@ describe("ensureProtection when protection is off", () => {
     expect(calls.badgeTexts).toEqual(["!"]);
     expect(calls.titles).toEqual([
       "<actionTitle>\n<problemRuleNotRegistered>\n<problemNoSiteAccess>",
-    ]);
-  });
-
-  test("treats a failed site access check as missing access and logs it, without throwing", async () => {
-    const { deps, calls } = createFakeBrowser({ allSitesAccess: "check fails" });
-
-    await expect(ensureProtection(deps)).resolves.toBeUndefined();
-
-    expect(calls.badgeTexts).toEqual(["!"]);
-    expect(calls.titles).toEqual(["<actionTitle>\n<problemNoSiteAccess>"]);
-    expect(calls.errors).toEqual([
-      { message: "Failed to check site access", error: new Error("Permission check failed") },
     ]);
   });
 });
@@ -208,24 +197,6 @@ describe("createProtector", () => {
     await Promise.all([first, second]);
 
     expect(calls.badgeTexts).toEqual(["!", ""]);
-  });
-
-  test("keeps running checks after one of them throws", async () => {
-    const { deps, calls } = createFakeBrowser();
-    let badgeUpdates = 0;
-    const protect = createProtector({
-      ...deps,
-      setBadgeText: (text) => {
-        badgeUpdates += 1;
-        calls.badgeTexts.push(text);
-        return badgeUpdates === 1 ? Promise.reject(new Error("No tab")) : Promise.resolve();
-      },
-    });
-
-    await expect(protect()).rejects.toThrow("No tab");
-    await protect();
-
-    expect(calls.badgeTexts).toEqual(["", ""]);
   });
 });
 

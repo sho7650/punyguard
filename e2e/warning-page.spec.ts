@@ -115,8 +115,7 @@ for (const from of ["a link", "a new tab"] as const) {
     }
     await expect(page.locator("#close-tab")).toBeVisible();
 
+    // The "close" event is the check: it times out if the tab stays open.
     await Promise.all([page.waitForEvent("close"), page.locator("#close-tab").click()]);
-
-    expect(page.isClosed()).toBe(true);
   });
 }

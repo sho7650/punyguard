@@ -4,9 +4,7 @@
 export function localize(): void {
   document.documentElement.lang = chrome.i18n.getMessage("lang");
   for (const element of document.querySelectorAll<HTMLElement>("[data-i18n]")) {
-    const key = element.dataset["i18n"];
-    if (key !== undefined) {
-      element.textContent = chrome.i18n.getMessage(key);
-    }
+    // The ?? only satisfies the type: the [data-i18n] selector matched, so the attribute is there.
+    element.textContent = chrome.i18n.getMessage(element.dataset["i18n"] ?? "");
   }
 }

@@ -3,7 +3,6 @@
 import { buildBlockRules } from "../src/core/block-rule.ts";
 import { expect, test } from "./support/fixtures.ts";
 import {
-  dynamicRuleIds,
   dynamicRules,
   expectedTitle,
   launchExtension,
@@ -17,7 +16,7 @@ import {
 } from "./support/extension.ts";
 
 test("registers the default rules and leaves the badge empty", async ({ extension }) => {
-  expect(await dynamicRuleIds(extension.worker)).toEqual(new Set([1, 2, 3, 7]));
+  // launchExtension (support/extension.ts) already waits until the default rules are registered.
   expect(await toolbarState(extension.worker)).toEqual({
     badge: "",
     title: await expectedTitle(extension.worker, []),
@@ -27,6 +26,7 @@ test("registers the default rules and leaves the badge empty", async ({ extensio
 // Vitest runs V8's regex engine; only Chrome can tell whether RE2 takes a pattern, including
 // its size limit. The allow rule differs with the userinfo setting, so every combination counts.
 test("RE2 accepts every rule under every combination of settings", async ({ extension }) => {
+  // Every rule from buildBlockRules sets regexFilter; ?? "" only satisfies the optional type.
   const patterns = new Set(
     [true, false].flatMap((blockUserinfo) =>
       [true, false].flatMap((blockIpHosts) =>
@@ -46,6 +46,7 @@ test("RE2 accepts every rule under every combination of settings", async ({ exte
       const results = await Promise.all(
         regexes.map((regex) => chrome.declarativeNetRequest.isRegexSupported({ regex })),
       );
+      // results has one entry per regex; ?? only satisfies noUncheckedIndexedAccess.
       return regexes.filter((_regex, index) => !(results[index]?.isSupported ?? false));
     },
     [...patterns],

@@ -21,6 +21,8 @@ function dependencyLicenses(): StaticFile[] {
   return Object.keys(packageJson.dependencies).map((name) => {
     const directory = `node_modules/${name}`;
     const license = readdirSync(directory).find((file) => /^licen[cs]e/iu.test(file));
+    // The dependencies are fixed in package.json and each ships a license file; this only gives
+    // a clearer message than cp would if one ever went missing.
     if (license === undefined) {
       throw new Error(`No license file for the dependency ${name} in ${directory}`);
     }

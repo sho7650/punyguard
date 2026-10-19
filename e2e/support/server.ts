@@ -1,6 +1,7 @@
 // A local HTTP server that plays both an ordinary ASCII site and an IDN site. Chromium is
 // started with --host-resolver-rules so that both host names resolve to it.
 import { createServer, type Server, type ServerResponse } from "node:http";
+import type { AddressInfo } from "node:net";
 
 // аррӏө.com: five Cyrillic letters that Chrome 154 still showed as "apple.com"
 export const IDN_HOST = "xn--80a6aa68c8d.com";
@@ -114,10 +115,10 @@ async function listen(server: Server): Promise<number> {
   await new Promise<void>((resolve) => {
     server.listen(0, "127.0.0.1", resolve);
   });
-  const address = server.address();
-  if (address === null || typeof address === "string") {
-    throw new TypeError(`Expected a TCP address, got ${String(address)}`);
-  }
+  // After listen() on a host and port, address() is always an AddressInfo: it returns null only
+  // before listening or after close, and a string only for pipes.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- always an AddressInfo here (above)
+  const address = server.address() as AddressInfo;
   return address.port;
 }
 
@@ -126,6 +127,8 @@ function close(server: Server): Promise<void> {
     // The browser may still hold keep-alive connections, which close() would wait for.
     server.closeAllConnections();
     server.close((error) => {
+      // The fixture closes the server once, so error is never set; the branch only satisfies
+      // the callback's type.
       if (error === undefined) {
         resolve();
       } else {
@@ -147,6 +150,8 @@ export async function startServer(): Promise<TestServer> {
   };
 
   const server = createServer((request, response) => {
+    // Chromium always sends Host and http.Server always sets url; ?? only satisfies the
+    // optional types.
     const host = (request.headers.host ?? "").replace(/:\d+$/u, "");
     const path = request.url ?? "/";
     if (host === IDN_HOST) {
