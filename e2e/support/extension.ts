@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium, expect, type BrowserContext, type Worker } from "@playwright/test";
 import { contentScriptRegistration } from "../../src/core/content-script.ts";
-import { loadSettings, type Settings } from "../../src/core/settings.ts";
+import { DEFAULT_SETTINGS, loadSettings, type Settings } from "../../src/core/settings.ts";
 import { BROWSER_ARGS } from "./browser-flags.ts";
 
 // The rules registered with the default settings: IDN hosts, userinfo and IP address hosts.
@@ -51,8 +51,12 @@ export async function launchExtension(
   });
   try {
     const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
-    // onInstalled registers the rules asynchronously after the worker starts.
+    // onInstalled registers the rules, then the content script, asynchronously after the worker
+    // starts. Waiting for both keeps a test from navigating, or stopping the worker, in between.
     await expect.poll(() => dynamicRuleIds(worker)).toEqual(new Set(DEFAULT_RULE_IDS));
+    await expect
+      .poll(() => registeredContentScriptFiles(worker))
+      .toEqual(contentScriptRegistration(DEFAULT_SETTINGS).js);
     const id = new URL(worker.url()).host;
     return { context, worker, id, warningPageUrl: `chrome-extension://${id}/blocked.html` };
   } catch (error) {

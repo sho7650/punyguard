@@ -94,7 +94,7 @@
   - パスワードは`***`に伏せ、ユーザー名は残すこと
 - [x] content scriptのエントリを足した（`src/content.ts`、esbuildの`ENTRY_POINTS`）。判定は`findBlockReasons`を使い、ページのDOMには触らない。
 - [x] 設定をcontent scriptに渡す方法: 設定の組み合わせ（8通り）ごとに、設定をcontent scriptの世界に宣言するだけの小さなスクリプト（`content-settings/<3桁>.js`）を、判定スクリプトの前に読み込ませる。`scripts/build.ts`が`settingsScripts()`から`dist/`に書き出す。
-  - 単体テスト（`src/core/content-script.test.ts`）: 8通りすべてで、登録内容が指す設定スクリプト（ビルドが書く内容）を実行すると、content scriptが同じ設定を読むこと。宣言がない・壊れているときは、すべて遮断する既定の設定になること。
+  - 単体テスト（`src/core/content-script.test.ts`）: 8通りすべてで、登録内容が指す設定スクリプト（ビルドが書く内容）を実行すると、content scriptが同じ設定を読むこと。宣言は登録内容が必ず先に読み込むので、宣言がない場合のテストと実装は置かない（起きないケースにコードを置かない方針。理由は`content-script.ts`のコメント）。
 
 ### Phase 1b: リダイレクトを追う仕組み（TDD）
 
@@ -170,7 +170,7 @@
 - [x] 設定: ユーザー情報付きURLやIPアドレスホストの遮断を無効にすると、Service Workerの応答が表示されることを確かめる。プライベートIPアドレスを除外した場合も確かめる。
   - 結果: `e2e/service-worker-settings.spec.ts`。公開IPアドレスはService Workerを用意できないので、単体テスト（`block-reasons.test.ts`）に任せる。
 - [x] 設定を切り替えた直後の遷移に、正しい設定が効くことを確かめる。
-  - 結果: `e2e/service-worker-settings.spec.ts`（無効にした直後と、戻した直後）。
+  - 結果: `e2e/service-worker-settings.spec.ts`（無効にした後と、戻した後の、次の遷移）。テストは、遮断ルールとcontent scriptの登録の両方が新しい設定になるのを待ってから遷移する。保存してから登録が変わるまでのごく短い間は、前の設定で判定する（ADR-0004）。この間は確かめていない。
 - [x] ブラウザを再起動した後と、拡張機能を更新（再読み込み）した後も効くことを確かめる。
   - 結果: `e2e/service-worker-lifecycle.spec.ts`（起動し直し・再読み込み・バージョンを上げた更新）。E2Eの起動し直しは入れ直しになるので、登録し直されるのを待ってから確かめる。本物の再起動で登録が残ることは測定で確かめた（上の「登録の手順」）。
 - [x] 権限の警告文が増えないことを確かめる（`management.getPermissionWarningsByManifest`を、変更前と変更後のmanifestで比べる）。

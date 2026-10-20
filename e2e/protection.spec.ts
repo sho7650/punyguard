@@ -16,7 +16,7 @@ import {
 } from "./support/extension.ts";
 
 test("registers the default rules and leaves the badge empty", async ({ extension }) => {
-  // launchExtension (support/extension.ts) already waits until the default rules are registered.
+  // launchExtension (support/extension.ts) already waits until the default rules and the content script are registered.
   expect(await toolbarState(extension.worker)).toEqual({
     badge: "",
     title: await expectedTitle(extension.worker, []),
