@@ -1,4 +1,4 @@
-# Service Worker が応答する遷移の遮断 計画（設計確定・Phase 0 完了・実装前）
+# Service Worker が応答する遷移の遮断 計画（Phase 3 まで完了）
 
 [todo-security-hardening.md](todo-security-hardening.md) の Phase 2 で、Service Worker が応答する遷移には declarativeNetRequest が効かないと分かった（[docs/decisions.md](../docs/decisions.md) の P3）。ユーザー情報付き URL は、攻撃者が自分のサイトに一度来させて Service Worker を登録させれば、PunyGuard を入れた後でもすり抜けられる。要求は [requirements-service-worker-bypass.md](requirements-service-worker-bypass.md)、設計は [ADR-0004](../docs/adr/0004-content-script-blocks-service-worker-navigation.md) に記録した。
 
@@ -24,10 +24,13 @@
 - **登録の失敗**: DNR ルールの登録に失敗した場合と同じく、問題として `!` バッジとツールチップで知らせる。ツールチップの文言は、新しいメッセージキーで足す（英語と日本語）。
 - **登録の失敗の扱い**（2026-10-19、ユーザーと決定）: 失敗は `!` バッジで知らせるだけにする。リダイレクトを追う仕組みを予備として動かすことはしない。調査では、今の作りで失敗するのは、登録の処理中に拡張機能が再読み込み・無効化された場合（一時的で、`onInstalled` で登録し直す）と、同梱ファイルが欠けた・UTF-8 でない場合（ビルドや配布の不具合）に限られた。
   - 起きないと分かったケース（同じ ID の二重登録、未登録の ID の更新、`getRegisteredContentScripts` の失敗、ID・`matches`・ファイル・大きさの不備、サイトへのアクセスやポリシーによる登録の失敗）には、実装もテストも書かず、理由を文書に残す（ユーザーの方針）。
-  - 未確認: 拡張機能の更新で、動的な登録が残るか消えるか。Phase 3 の V-4 で、更新の場合も確かめる。
+  - 拡張機能の更新で動的な登録が残るか（2026-10-20 に測定）: ブラウザの再起動（10 回中 10 回）と無効化→有効化（5 回中 5 回）では残る。更新と再読み込みでは消え（各 5 回中 5 回）、`onInstalled` が 70〜83 ミリ秒で登録し直す。E2E の環境は `--load-extension` で起動のたびに入れ直すので、起動し直しても消える。
 - **権限**: `scripting` と `webNavigation` を足す。インストール時の警告文は増えない（確認済み）。
 - **E2E での Service Worker の用意**: PunyGuard を入れていないプロファイルで、先にサイトを開いて Service Worker を登録する。その後で PunyGuard を入れて起動する。テスト用ホストは `--unsafely-treat-insecure-origin-as-secure` で安全なオリジンとして扱う。
 - **`<object>`・`<embed>`**: この 2 つの中の遷移には Service Worker が応答しないので、引き続き DNR だけで遮断する。
+- **限界として認めたこと**（2026-10-20、ユーザーと決定。要求仕様書の FR-2・対象外、ADR-0004）:
+  - ユーザー情報付き URL への遷移を Service Worker が中継すると、Chrome が遷移を失敗させてエラーページになる（PunyGuard の有無によらない）。タブの履歴とアドレスバーに平文のパスワード付きの URL が残るが、エラーページには手を出せず、`tabs.update` で移しても「戻る」に残った（10 回中 10 回）ので、何もしない。
+  - 更新・再読み込みの直後、content script を登録し直すまでの 70〜83 ミリ秒は、Service Worker が応答する遷移を遮断できない。manifest に書く content script は設定を渡せないので採らない。
 
 ## 根拠（Chromium 156、headless で測定）
 
@@ -132,10 +135,13 @@
 
 - 進め方（2026-10-19、ユーザーと決定）: 既存の E2E を 1 回通してから、共通の土台（Service Worker を事前に登録したプロファイル、パーティション分割の有効化、拡張機能の service worker を止める仕組み）を作る。その後、spec ごとにサブエージェントを分け、別々の git worktree で並行して書く。最後に 1 か所で全部を通す。同じ E2E を並行で何本も実行することはしない（`dist/` の取り合いと、時間を見るテストが負荷で不安定になるため）。
 
-- [ ] ストレージのパーティション分割を有効にして実行する。Playwright は既定で `--disable-features` に `ThirdPartyStoragePartitioning` を含めるので、これを外す方法を決める。分割が有効なことは、iframe の陽性対照（トップレベルで登録した Service Worker が、別サイトに埋め込まれた iframe を制御しないこと）で確かめる。
-- [ ] Service Worker を事前に登録したプロファイルを用意する仕組みを作る（`e2e/support/`）。iframe 用の Service Worker は、埋め込み先のページの中の iframe から登録する（同じトップレベルのサイトの下に登録するため）。中継型（`fetch(event.request)`）と自作型（`new Response(...)`）の 2 種類の Service Worker を用意する。どちらも遷移（`event.request.mode === "navigate"`）にだけ応答し、ビーコンなどほかのリクエストには応答しない。こうすると、それらのリクエストはネットワークを通ってテストサーバーに届く。
-- [ ] 拡張機能の service worker を止める仕組みを作る（CDP の `ServiceWorker.stopWorker` など。止まったことも確かめる）。
-- [ ] 観測の方法を決める。ページ全体の遷移と iframe の中の遷移の、どちらにも使う。
+- [x] ストレージのパーティション分割を有効にして実行する。Playwright は既定で `--disable-features` に `ThirdPartyStoragePartitioning` を含めるので、これを外す方法を決める。分割が有効なことは、iframe の陽性対照（トップレベルで登録した Service Worker が、別サイトに埋め込まれた iframe を制御しないこと）で確かめる。
+  - 結果: Playwright 1.64.1 の一覧から `ThirdPartyStoragePartitioning` だけを外した `--disable-features=` を後ろに足す（Chromium は後のスイッチを使う。`e2e/support/browser-flags.ts`）。既存の E2E も含め、すべてで有効にした。`service-worker-controls.spec.ts` が、`chrome://version` でスイッチのずれを、Service Worker が iframe を制御するかで分割の有無を確かめる。
+- [x] Service Worker を事前に登録したプロファイルを用意する仕組みを作る（`e2e/support/`）。iframe 用の Service Worker は、埋め込み先のページの中の iframe から登録する（同じトップレベルのサイトの下に登録するため）。中継型（`fetch(event.request)`）と自作型（`new Response(...)`）の 2 種類の Service Worker を用意する。どちらも遷移（`event.request.mode === "navigate"`）にだけ応答し、ビーコンなどほかのリクエストには応答しない。こうすると、それらのリクエストはネットワークを通ってテストサーバーに届く。
+  - 結果: `e2e/support/service-worker-profile.ts`。Playwright のワーカーごとに 1 回登録し（約 1.0 秒）、テストごとにプロファイルを複製する（約 0.35 秒）。リダイレクトで応答する 2 種類も足した。
+- [x] 拡張機能の service worker を止める仕組みを作る（CDP の `ServiceWorker.stopWorker` など。止まったことも確かめる）。
+  - 結果: `e2e/support/extension-worker.ts`。止まったことは CDP の状態で確かめる。Playwright の `Worker` は、止まっても閉じたことにならず、`evaluate` は応答しない（2026-10-20 に測定）。
+- [x] 観測の方法を決める。ページ全体の遷移と iframe の中の遷移の、どちらにも使う。
   - 描画（AC-1）: Phase 0 で決めた、先読みと関係のない観測方法（CDP の描画イベントか画面のキャプチャ）で見る。画像の読み込みは、先読みでも起きるので、AC-1 の判定には使わない。
   - スクリプト（AC-2）: ページのスクリプトが送るビーコンで見る。
   - 陽性対照: PunyGuard を入れる前のプロファイル（Service Worker を登録する段階）で、次のすべての組み合わせを開き、ビーコンがサーバーに届くこと、および描画を捉えられることを確かめる。捉えられない組み合わせでは、その観測方法が使えないので、「捉えなかった」ことを遮断の証拠にしない。
@@ -144,21 +150,31 @@
     - 開き方: ページ全体／iframe
 
     ただし、ユーザー情報付き URL の中継型と iframe は、Chrome 自身が拒否するので、対照からは外す（下の各項目を参照）。
-- [ ] ページ全体の遷移（AC-1〜AC-3）: 3 つの遮断理由それぞれについて、次の 4 通りすべてで確かめる。1 回目の遷移が警告ページになり、攻撃者のページの描画を捉えず、ビーコンもサーバーに届かないこと。
+
+  - 結果: 描画は CDP のトレース（`e2e/support/paint-trace.ts`）、スクリプトはビーコンで見る。陽性対照は、除外した 2 つ（ユーザー情報付き URL の中継型と iframe）以外のすべてで捉えた。
+- [x] ページ全体の遷移（AC-1〜AC-3）: 3 つの遮断理由それぞれについて、次の 4 通りすべてで確かめる。1 回目の遷移が警告ページになり、攻撃者のページの描画を捉えず、ビーコンもサーバーに届かないこと。
   - Service Worker の種類: 中継型／自作型
   - 拡張機能の service worker: 動作中／停止中
 
   ユーザー情報付き URL を中継型で開くと、Chrome は中継を拒否する（2026-10-18 の調査）。それでも、警告ページになり、描画もビーコンもないことを確かめる。
+  - 結果: `e2e/service-worker-top-level.spec.ts`。ユーザー情報付き URL の中継型は、Chrome が遷移を失敗させてエラーページになる（限界として認めた。上の「限界として認めたこと」）。描画もビーコンもないことを確かめる。
 
-- [ ] iframe の中の遷移（AC-1・AC-2）:
+- [x] iframe の中の遷移（AC-1・AC-2）:
   - IDN ホストと IP アドレスホストでは、フレーム内が警告ページになり、フレームの中の描画を捉えず、ビーコンも届かないことを確かめる。Service Worker は中継型と自作型の両方で試す。
   - ユーザー情報付き URL では、警告ページにはならず、読み込まれず、描画もビーコンもないことを確かめる（Chrome の拒否）。
-- [ ] リダイレクト（FR-9・AC-4、要求仕様書の V-2d）: リダイレクトで応答する Service Worker（同じオリジン内へ・普通のホストへ）を用意する。3 つの遮断理由、ページ全体と iframe、拡張機能の service worker の動作中と停止中のすべての組み合わせで、最後に警告ページになることを確かめる。ユーザー情報付き URL の iframe は、Chrome が拒否するので外す。同じオリジン内へのリダイレクトで、IDN ホストと IP アドレスホストのリダイレクト先が遮断理由に当たる場合は、content script が移すことも確かめる。
-- [ ] パスワード: パスワード付きの URL を Service Worker 経由で開いたとき（リダイレクトの場合を含む）、警告ページのアドレスバーにパスワードが `***` で出ることを確かめる。履歴に平文が残らないことも確かめる（Phase 0 で再合意して要求を改めた場合は、改めた要求に従う）。
-- [ ] 設定: ユーザー情報付き URL や IP アドレスホストの遮断を無効にすると、Service Worker の応答が表示されることを確かめる。プライベート IP アドレスを除外した場合も確かめる。
-- [ ] 設定を切り替えた直後の遷移に、正しい設定が効くことを確かめる。
-- [ ] ブラウザを再起動した後と、拡張機能を更新（再読み込み）した後も効くことを確かめる。
-- [ ] 権限の警告文が増えないことを確かめる（`management.getPermissionWarningsByManifest` を、変更前と変更後の manifest で比べる）。
+  - 結果: `e2e/service-worker-iframe.spec.ts`。停止中は、空の iframe を入れたページを開いてから止め、その後で iframe を遷移させる（外側のページを開くと service worker が起き直すため）。
+- [x] リダイレクト（FR-9・AC-4、要求仕様書の V-2d）: リダイレクトで応答する Service Worker（同じオリジン内へ・普通のホストへ）を用意する。3 つの遮断理由、ページ全体と iframe、拡張機能の service worker の動作中と停止中のすべての組み合わせで、最後に警告ページになることを確かめる。ユーザー情報付き URL の iframe は、Chrome が拒否するので外す。同じオリジン内へのリダイレクトで、IDN ホストと IP アドレスホストのリダイレクト先が遮断理由に当たる場合は、content script が移すことも確かめる。
+  - 結果: `e2e/service-worker-redirect.spec.ts`（20 通り）。IDN ホスト・IP アドレスホストの同じオリジン内へのリダイレクトでは、警告ページの URL がリダイレクト先になることで、content script が移したと分かる。
+- [x] パスワード: パスワード付きの URL を Service Worker 経由で開いたとき（リダイレクトの場合を含む）、警告ページのアドレスバーにパスワードが `***` で出ることを確かめる。履歴に平文が残らないことも確かめる（Phase 0 で再合意して要求を改めた場合は、改めた要求に従う）。
+  - 結果: `e2e/service-worker-top-level.spec.ts`（アドレスバー・タブの履歴・ブラウザの履歴）と `e2e/service-worker-redirect.spec.ts`（リダイレクト）。
+- [x] 設定: ユーザー情報付き URL や IP アドレスホストの遮断を無効にすると、Service Worker の応答が表示されることを確かめる。プライベート IP アドレスを除外した場合も確かめる。
+  - 結果: `e2e/service-worker-settings.spec.ts`。公開 IP アドレスは Service Worker を用意できないので、単体テスト（`block-reasons.test.ts`）に任せる。
+- [x] 設定を切り替えた直後の遷移に、正しい設定が効くことを確かめる。
+  - 結果: `e2e/service-worker-settings.spec.ts`（無効にした直後と、戻した直後）。
+- [x] ブラウザを再起動した後と、拡張機能を更新（再読み込み）した後も効くことを確かめる。
+  - 結果: `e2e/service-worker-lifecycle.spec.ts`（起動し直し・再読み込み・バージョンを上げた更新）。E2E の起動し直しは入れ直しになるので、登録し直されるのを待ってから確かめる。本物の再起動で登録が残ることは測定で確かめた（上の「登録の手順」）。
+- [x] 権限の警告文が増えないことを確かめる（`management.getPermissionWarningsByManifest` を、変更前と変更後の manifest で比べる）。
+  - 結果: `e2e/service-worker-lifecycle.spec.ts`。変更前も変更後も「Read and change all your data on all websites」の 1 行だけ。
 
 ### Phase 4: 文書
 
@@ -171,5 +187,6 @@
 ### Phase 5: 確認
 
 - [ ] `direnv exec . pnpm run check` と `direnv exec . pnpm run test:e2e` が通る。
+  - Phase 3 の時点（2026-10-20）: check は 325 件、E2E は 133 件成功・3 件スキップ（Linux 専用の言語のテスト）。Service Worker の spec 6 つを 3 回繰り返して 198 件成功。
 - [ ] 要求仕様書の FR・AC・C・V のそれぞれについて、どのテストで確かめたかを対応づける。
 - [ ] レビュー
