@@ -69,8 +69,12 @@ Click the PunyGuard icon in the toolbar to open the settings (or **Extension opt
 | `declarativeNetRequest` | Registers the rules that match the URLs to block. Chrome applies the rules itself; the extension never sees your browsing                                                                                                                                                         |
 | `<all_urls>`            | A rule that redirects (rather than just blocks) needs host access to the URLs it redirects. Redirecting is what lets the warning page explain why the page was stopped, instead of a bare `ERR_BLOCKED_BY_CLIENT` ([ADR-0002](docs/adr/0002-redirect-to-bundled-warning-page.md)) |
 | `storage`               | Keeps the [settings](#settings) on this device                                                                                                                                                                                                                                    |
+| `scripting`             | Registers the content script below with your current settings, and moves a frame that a site's service worker redirected away from a blocked URL to the warning page ([ADR-0004](docs/adr/0004-content-script-blocks-service-worker-navigation.md))                               |
+| `webNavigation`         | Notices when a site's service worker answers a blocked navigation with a redirect, so that the frame can be moved to the warning page                                                                                                                                             |
 
-PunyGuard has no content scripts and sends nothing over the network. The only thing it stores is its settings.
+Neither `scripting` nor `webNavigation` adds a line to Chrome's permission warning, because `<all_urls>` already covers them.
+
+PunyGuard runs one small content script at the start of every page and frame. It looks only at the page's URL, makes the same check as the blocking rules, and moves a page that should have been blocked to the warning page. This catches pages that a site's service worker answers, which the rules never see. It does not read the page's content. PunyGuard sends nothing over the network, and the only thing it stores is its settings.
 
 ### Keep site access at "On all sites"
 
@@ -89,18 +93,20 @@ As in normal windows, the warning page reads the original URL only to show it on
 A `!` on the toolbar icon means **blocking is off**. Hover over the icon to see why in the tooltip:
 
 - **The blocking rule could not be registered**: reload the extension in `chrome://extensions`. If it persists, check the service worker's console there for the error.
+- **The content script could not be registered**: pages that a site's service worker answers are not blocked. Reload the extension in `chrome://extensions`. If it persists, check the service worker's console there for the error.
 - **Set site access to "On all sites"**: set it back to **On all sites**.
 
-The badge goes away once both are fine.
+The badge goes away once all of them are fine.
 
 Settings loosened from the default (blocking URLs with user info or IP address hosts turned off, private IP addresses excluded) are choices, not faults, so they add a line to the tooltip without the badge.
 
 ## Known limitations
 
 - If the warning page is the first page of a new tab, and you go to another page and then come back with the browser's back button, **Go back** is shown but does nothing (there is no earlier page). **Close this tab** still works.
-- Navigation that a service worker answers is not blocked: the Chrome mechanism PunyGuard uses (declarativeNetRequest) does not apply to it.
-  - IDN hosts and IP address hosts: a site you visited before installing PunyGuard (or while its block was off) may have registered a service worker, and navigation to that site may then not be blocked. Once PunyGuard is installed, a blocked site's pages never load, so no new service worker gets registered. Deleting the site's data in `chrome://settings/content/all` removes the worker.
-  - URLs with user info: the block is on the URL, and the real site itself opens normally. An attacker who gets you to visit their site once can register a service worker there, and a URL such as `https://www.apple.com@evil.example/` may then not be blocked, even with PunyGuard installed ([P3](docs/decisions.md#p3-navigation-that-a-service-worker-answers-stays-unblocked)).
+- A site's service worker still runs when it answers a navigation, even one that PunyGuard blocks. PunyGuard moves the page to the warning page, but it cannot stop the worker's own code ([P3](docs/decisions.md#p3-navigation-that-a-service-worker-answers-is-blocked-by-a-content-script)).
+- If a site's service worker answers with a redirect to another page, that page may show and run for a moment before PunyGuard replaces it with the warning page.
+- If a site's service worker relays a navigation to a URL with user info to the network, Chrome itself fails it and shows its own error page instead of the warning page. The page does not load, but the URL, password included, stays in the address bar and in the tab's back history. It does not go into Chrome's history. This happens with or without PunyGuard.
+- Right after PunyGuard is updated or reloaded, there is a fraction of a second, until it registers its content script again, when a navigation that a service worker answers is not blocked. Navigations that the blocking rules see are not affected, and a browser restart has no such gap.
 
 ## Development
 
