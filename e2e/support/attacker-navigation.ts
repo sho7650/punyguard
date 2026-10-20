@@ -44,6 +44,35 @@ export async function openTraced(
 }
 
 /**
+ * Opens a page on ASCII_HOST whose iframe is still at about:blank, runs `beforeNavigation` once
+ * it has loaded, then points the iframe at the visit and counts the attacker's paints until
+ * `settled` resolves, as openTraced does. The embedding page's own navigation starts the
+ * extension's worker (extension-worker.ts), so a test that needs the worker stopped when the
+ * iframe navigates stops it in `beforeNavigation`. Stopped there, it stayed stopped until the
+ * iframe's navigation started it, about 20 ms after the src was set (2026-10-20, 12 of 12 runs
+ * with Chrome's status watched throughout); the about:blank iframe wakes nothing, since it has
+ * loaded before the stop. The page is on ASCII_HOST, where the seeding registered the iframes'
+ * Service Workers (service-worker-profile.ts). Its trace starts once it has loaded, so its own
+ * paints are not in it.
+ */
+export async function openTracedInIframe(
+  page: Page,
+  server: TestServer,
+  visit: AttackerVisit,
+  beforeNavigation: () => Promise<void>,
+  settled: () => Promise<void>,
+): Promise<AttackerPaints> {
+  await page.goto(server.iframeEmbeddingUrl("about:blank"));
+  const trace = await startPaintTrace(page, visit);
+  await beforeNavigation();
+  await page.locator("iframe").evaluate((iframe, url) => {
+    iframe.setAttribute("src", url);
+  }, visit.url);
+  await settled();
+  return trace.stop();
+}
+
+/**
  * Waits until the frame's document reports its first contentful paint to its own scripts. The
  * trace can get the matching event later than the paint: 2026-10-20, stopping the trace two
  * animation frames after the attacker page showed lost the event in 1 of 9 positive controls.

@@ -11,7 +11,7 @@ import { BROWSER_ARGS } from "./browser-flags.ts";
 // The rules registered with the default settings: IDN hosts, userinfo and IP address hosts.
 export const DEFAULT_RULE_IDS: readonly number[] = [1, 2, 3, 7];
 
-const DIST = path.resolve(import.meta.dirname, "../../dist");
+export const DIST = path.resolve(import.meta.dirname, "../../dist");
 
 export interface Extension {
   readonly context: BrowserContext;
@@ -29,19 +29,21 @@ export function removeUserDataDir(userDataDir: string): void {
 }
 
 // extraArgs adds switches, such as secureOriginArgs for the Service Worker tests, which launch
-// PunyGuard on a profile seeded without it (service-worker-profile.ts).
+// PunyGuard on a profile seeded without it (service-worker-profile.ts). extensionDir loads a
+// copy of dist/ instead, which a test may change, as the update test does.
 export async function launchExtension(
   userDataDir: string,
   env: Readonly<Record<string, string>> = {},
   extraArgs: readonly string[] = [],
+  extensionDir: string = DIST,
 ): Promise<Extension> {
   const context = await chromium.launchPersistentContext(userDataDir, {
     // Only the new headless mode (or a headed browser) loads extensions; the default
     // headless shell does not.
     channel: "chromium",
     args: [
-      `--disable-extensions-except=${DIST}`,
-      `--load-extension=${DIST}`,
+      `--disable-extensions-except=${extensionDir}`,
+      `--load-extension=${extensionDir}`,
       ...BROWSER_ARGS,
       ...extraArgs,
     ],
@@ -101,7 +103,9 @@ export async function saveRawSettings(
 
 // The files of the registered content script, the first of which declares the settings
 // (src/core/content-script.ts)
-function registeredContentScriptFiles(worker: Worker): Promise<readonly string[] | undefined> {
+export function registeredContentScriptFiles(
+  worker: Worker,
+): Promise<readonly string[] | undefined> {
   return worker.evaluate(async () => {
     const [script] = await chrome.scripting.getRegisteredContentScripts();
     return script?.js;

@@ -79,3 +79,24 @@ export async function startExtensionWorker(extension: Extension, page: Page): Pr
   await expect.poll(() => watch.current()?.runningStatus).toBe("running");
   await watch.session.detach();
 }
+
+/** The state the extension's worker is in when the navigation under test starts. */
+export type WorkerState = "running" | "stopped";
+
+export const WORKER_STATES: readonly WorkerState[] = ["running", "stopped"];
+
+/**
+ * Puts the extension's worker in the state for the navigation that the test starts next on
+ * `page`: "running" leaves it as it is, and "stopped" stops it and checks once more that Chrome
+ * reports it stopped.
+ */
+export async function prepareExtensionWorker(
+  extension: Extension,
+  page: Page,
+  state: WorkerState,
+): Promise<void> {
+  if (state === "stopped") {
+    await stopExtensionWorker(extension, page);
+    expect(await extensionWorkerStatus(extension, page)).toBe("stopped");
+  }
+}

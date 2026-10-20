@@ -1,8 +1,7 @@
 // URLs with user info and IP address hosts: what is blocked under which settings, and what the
 // warning page says about it.
-import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import type { Page } from "@playwright/test";
+import { historyUrls } from "./support/browser-history.ts";
 import {
   launchExtension,
   newUserDataDir,
@@ -26,21 +25,6 @@ async function expectReasons(
         : expect(page.locator(`#reason-${reason}`)).toBeHidden(),
     ),
   );
-}
-
-// Every URL in the profile's browser history. Chrome must be closed first.
-function historyUrls(userDataDir: string): string[] {
-  const database = new DatabaseSync(path.join(userDataDir, "Default", "History"), {
-    readOnly: true,
-  });
-  try {
-    return database
-      .prepare("SELECT url FROM urls")
-      .all()
-      .map((row) => String(row["url"]));
-  } finally {
-    database.close();
-  }
 }
 
 test.describe("with the default settings", () => {
