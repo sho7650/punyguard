@@ -13,6 +13,8 @@ const SETTING_NAMES: readonly SettingName[] = [
 
 function checkbox(name: SettingName): HTMLInputElement {
   const element = document.querySelector(`#${name}`);
+  // Only narrows the type: options.html ships with this script, so a missing checkbox is a
+  // build mistake, not something that happens at run time.
   if (!(element instanceof HTMLInputElement)) {
     throw new TypeError(`options.html has no <input> with id "${name}"`);
   }
@@ -38,9 +40,11 @@ function readForm(): Settings {
 
 function showSaveFailed(failed: boolean): void {
   const message = document.querySelector("#save-failed");
-  if (message instanceof HTMLElement) {
-    message.hidden = !failed;
+  // Only narrows the type, as in checkbox().
+  if (!(message instanceof HTMLElement)) {
+    throw new TypeError('options.html has no element with id "save-failed"');
   }
+  message.hidden = !failed;
 }
 
 async function refresh(): Promise<void> {
@@ -62,28 +66,25 @@ async function save(): Promise<void> {
   }
 }
 
-function reportError(message: string): (error: unknown) => void {
-  return (error) => {
-    console.error(message, error);
-  };
-}
-
+// save and refresh do not reject: loadSavedSettings never rejects, save catches a failed
+// storage write itself, and the only other throw is showSettings finding no checkbox in the
+// static options.html, a build mistake.
 function listenForChanges(): void {
   for (const name of SETTING_NAMES) {
     checkbox(name).addEventListener("change", () => {
-      save().catch(reportError("Failed to save the settings"));
+      void save();
     });
   }
   // Another options tab may change the settings too.
   onSettingsChanged(() => {
-    refresh().catch(reportError("Failed to show the settings"));
+    void refresh();
   });
 }
 
 // The listeners go on after the saved settings are shown, so a click cannot save the blank form.
 function start(): void {
   localize();
-  refresh().then(listenForChanges).catch(reportError("Failed to open the options page"));
+  void refresh().then(listenForChanges);
 }
 
 start();

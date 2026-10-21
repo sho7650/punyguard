@@ -6,3 +6,4 @@
 
 - 拡張機能 ID が警告ページの URL に入るので、ルールは静的にせず、service worker が `runtime.getURL` を使って動的に登録する。
 - `<all_urls>` を要求しても、content script を置かず外部と通信しない構成を保つ。理由は README に書く。
+- （2026-10-20追記）content scriptを置かないという点は、[ADR-0004](0004-content-script-blocks-service-worker-navigation.md)で置き換えた。外部と通信しないことは保つ。

@@ -1,8 +1,7 @@
 // URLs with user info and IP address hosts: what is blocked under which settings, and what the
 // warning page says about it.
-import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import type { Page } from "@playwright/test";
+import { historyUrls } from "./support/browser-history.ts";
 import {
   launchExtension,
   newUserDataDir,
@@ -26,21 +25,6 @@ async function expectReasons(
         : expect(page.locator(`#reason-${reason}`)).toBeHidden(),
     ),
   );
-}
-
-// Every URL in the profile's browser history. Chrome must be closed first.
-function historyUrls(userDataDir: string): string[] {
-  const database = new DatabaseSync(path.join(userDataDir, "Default", "History"), {
-    readOnly: true,
-  });
-  try {
-    return database
-      .prepare("SELECT url FROM urls")
-      .all()
-      .map((row) => String(row["url"]));
-  } finally {
-    database.close();
-  }
 }
 
 test.describe("with the default settings", () => {
@@ -157,11 +141,7 @@ test.describe("canonical URLs", () => {
   });
 
   test("an IPv4-mapped IPv6 host becomes hex groups", async ({ extension }) => {
-    await saveSettings(
-      extension,
-      { blockUserinfo: true, blockIpHosts: true, excludePrivateIps: false },
-      [1, 2, 3, 7],
-    );
+    // The default settings do not exclude private IP addresses, so 192.168.0.1 is blocked.
     const page = await extension.context.newPage();
     await page.goto("http://[::ffff:192.168.0.1]/");
 

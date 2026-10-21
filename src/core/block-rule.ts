@@ -77,7 +77,7 @@ function passwordRule(
     id,
     priority: PASSWORD_PRIORITY,
     condition: {
-      regexFilter: `^(https?://[^/?#@:]*):[^/?#@]*@(${hostPattern})`,
+      regexFilter: `^(https?://[^/@:]*):[^/@]*@(${hostPattern})`,
       resourceTypes: RESOURCE_TYPES,
     },
     action: {
@@ -87,15 +87,21 @@ function passwordRule(
   };
 }
 
-const USERINFO = "(?:[^/?#@]*@)?";
+// Chrome matches the rules against its canonical URL, which for http(s) always has a "/" right
+// after host[:port]. A raw "/", "?" or "#" ends the host part, and those characters inside the
+// userinfo are percent-encoded, so the authority always ends at the first "/" and the patterns
+// here need not look for "?" or "#" (Chromium's url_canon_stdurl.cc and url_parse.cc, the
+// declarativeNetRequest docs' example http://abc.xn--p1ai/?q=..., and a run with 14 kinds of
+// URL, 2026-10-19).
+const USERINFO = "(?:[^/@]*@)?";
 
 // Looks for a label that starts with xn--. The match runs on to the end of the authority
 // without crossing an "@", so an xn-- inside the userinfo cannot pass for the host.
-const IDN_HOST_PATTERN = "(?:[^/?#@.]*\\.)*xn--[^/?#@]*[/?#]";
+const IDN_HOST_PATTERN = "(?:[^/@.]*\\.)*xn--[^/@]*/";
 
 // Like the IDN pattern, the host is matched up to the end of the authority (after an optional
 // port), so an address inside the userinfo cannot pass for the host.
-const IP_HOST_PATTERN = `(?:${IPV4_PATTERN}|${IPV6_PATTERN})(?::[0-9]+)?[/?#]`;
+const IP_HOST_PATTERN = `(?:${IPV4_PATTERN}|${IPV6_PATTERN})(?::[0-9]+)?/`;
 
 // A rule that blocks by the host, whatever userinfo comes before it, and the password rule that
 // goes with it.
@@ -118,7 +124,7 @@ const IP_HOST_RULE: HostRule = {
 };
 
 // Chrome percent-encodes any "@" inside the userinfo, so the one left is the separator.
-const USERINFO_PATTERN = "^https?://[^/?#@]*@";
+const USERINFO_PATTERN = "^https?://[^/@]*@";
 
 // An allow rule lets the whole navigation through, whatever else it matches. While userinfo is
 // blocked, it must not reach URLs with userinfo, so http://admin@192.168.0.1/ stays blocked as
@@ -134,7 +140,7 @@ function privateIpRules(settings: Settings): chrome.declarativeNetRequest.Rule[]
     id,
     priority: ALLOW_PRIORITY,
     condition: {
-      regexFilter: `^https?://${userinfo}${pattern}(?::[0-9]+)?[/?#]`,
+      regexFilter: `^https?://${userinfo}${pattern}(?::[0-9]+)?/`,
       resourceTypes: RESOURCE_TYPES,
     },
     action: { type: "allow" },

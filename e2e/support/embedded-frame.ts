@@ -7,8 +7,9 @@ export async function embeddedFrame(page: Page): Promise<Frame> {
   const childFrames = (): Frame[] => page.frames().filter((frame) => frame !== page.mainFrame());
   await expect.poll(() => childFrames().length).toBe(1);
   const [frame] = childFrames();
+  // The poll just confirmed exactly one frame; the check only narrows the type.
   if (frame === undefined) {
-    throw new Error("The embedded document disappeared");
+    throw new Error("Expected the embedded document confirmed by the poll");
   }
   return frame;
 }

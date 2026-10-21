@@ -4,13 +4,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium, expect, type BrowserContext, type Worker } from "@playwright/test";
-import type { Settings } from "../../src/core/settings.ts";
-import { ASCII_HOST, IDN_HOST } from "./server.ts";
+import { contentScriptRegistration } from "../../src/core/content-script.ts";
+import { DEFAULT_SETTINGS, loadSettings, type Settings } from "../../src/core/settings.ts";
+import { BROWSER_ARGS } from "./browser-flags.ts";
 
 // The rules registered with the default settings: IDN hosts, userinfo and IP address hosts.
 export const DEFAULT_RULE_IDS: readonly number[] = [1, 2, 3, 7];
 
-const DIST = path.resolve(import.meta.dirname, "../../dist");
+export const DIST = path.resolve(import.meta.dirname, "../../dist");
 
 export interface Extension {
   readonly context: BrowserContext;
@@ -27,25 +28,35 @@ export function removeUserDataDir(userDataDir: string): void {
   rmSync(userDataDir, { recursive: true, force: true });
 }
 
+// extraArgs adds switches, such as secureOriginArgs for the Service Worker tests, which launch
+// PunyGuard on a profile seeded without it (service-worker-profile.ts). extensionDir loads a
+// copy of dist/ instead, which a test may change, as the update test does.
 export async function launchExtension(
   userDataDir: string,
   env: Readonly<Record<string, string>> = {},
+  extraArgs: readonly string[] = [],
+  extensionDir: string = DIST,
 ): Promise<Extension> {
   const context = await chromium.launchPersistentContext(userDataDir, {
     // Only the new headless mode (or a headed browser) loads extensions; the default
     // headless shell does not.
     channel: "chromium",
     args: [
-      `--disable-extensions-except=${DIST}`,
-      `--load-extension=${DIST}`,
-      `--host-resolver-rules=MAP ${IDN_HOST} 127.0.0.1, MAP ${ASCII_HOST} 127.0.0.1`,
+      `--disable-extensions-except=${extensionDir}`,
+      `--load-extension=${extensionDir}`,
+      ...BROWSER_ARGS,
+      ...extraArgs,
     ],
     env: { ...process.env, ...env },
   });
   try {
     const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
-    // onInstalled registers the rules asynchronously after the worker starts.
+    // onInstalled registers the rules, then the content script, asynchronously after the worker
+    // starts. Waiting for both keeps a test from navigating, or stopping the worker, in between.
     await expect.poll(() => dynamicRuleIds(worker)).toEqual(new Set(DEFAULT_RULE_IDS));
+    await expect
+      .poll(() => registeredContentScriptFiles(worker))
+      .toEqual(contentScriptRegistration(DEFAULT_SETTINGS).js);
     const id = new URL(worker.url()).host;
     return { context, worker, id, warningPageUrl: `chrome-extension://${id}/blocked.html` };
   } catch (error) {
@@ -64,7 +75,7 @@ export async function dynamicRuleIds(worker: Worker): Promise<ReadonlySet<number
 }
 
 // Writes the settings as the options page does and waits until the service worker has
-// registered the rules they call for.
+// registered the rules and the content script they call for.
 export async function saveSettings(
   extension: Extension,
   saved: Settings,
@@ -81,6 +92,28 @@ export async function saveRawSettings(
 ): Promise<void> {
   await extension.worker.evaluate((settings) => chrome.storage.local.set({ settings }), saved);
   await expect.poll(() => dynamicRuleIds(extension.worker)).toEqual(new Set(expectedRuleIds));
+  // The content script is updated after the rules. Until then it still blocks by the earlier
+  // settings, so a navigation right away could be sent to the warning page. Settings that
+  // cannot be used fall back to the defaults, as in the extension.
+  const settings = await loadSettings(
+    () => Promise.resolve(saved),
+    () => {
+      // Broken settings are what saveRawSettings is for; nothing to report.
+    },
+  );
+  const { js } = contentScriptRegistration(settings);
+  await expect.poll(() => registeredContentScriptFiles(extension.worker)).toEqual(js);
+}
+
+// The files of the registered content script, the first of which declares the settings
+// (src/core/content-script.ts)
+export function registeredContentScriptFiles(
+  worker: Worker,
+): Promise<readonly string[] | undefined> {
+  return worker.evaluate(async () => {
+    const [script] = await chrome.scripting.getRegisteredContentScripts();
+    return script?.js;
+  });
 }
 
 export function toolbarState(worker: Worker): Promise<{ badge: string; title: string }> {

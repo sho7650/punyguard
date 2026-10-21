@@ -54,18 +54,22 @@ test("a sandboxed iframe without allow-scripts never shows the IDN content", asy
   expect(server.idnRequests).toEqual([]);
   const frame = page.frameLocator("iframe");
   await expect(frame.locator("body")).not.toContainText(IDN_CONTENT);
-  // Either outcome blocks. When the redirect goes through (Chrome 156 does), blocked.js
-  // cannot run in the sandbox, so the fixed bilingual text is all there is.
-  const frameUrl = page
-    .frames()
-    .find((candidate) => candidate !== page.mainFrame())
-    ?.url();
-  if (frameUrl?.startsWith(extension.warningPageUrl) === true) {
-    await expect(frame.locator("h1")).toContainText("PunyGuard がこのページへの移動を止めました");
-    await expect(frame.locator("h1")).toContainText("PunyGuard blocked this page");
-    await expect(frame.locator("#details")).toBeHidden();
-    await expect(frame.locator("#actions")).toBeHidden();
-  }
+  // With the Chromium Playwright pins (156.0.8078.4), the sandboxed frame was redirected to the
+  // warning page in 10 of 10 runs (2026-10-19). Older Chrome may have refused the redirect,
+  // which would also have blocked. blocked.js cannot run in the sandbox, so the fixed bilingual
+  // text is all there is.
+  await expect
+    .poll(() =>
+      page
+        .frames()
+        .find((candidate) => candidate !== page.mainFrame())
+        ?.url(),
+    )
+    .toContain(extension.warningPageUrl);
+  await expect(frame.locator("h1")).toContainText("PunyGuard がこのページへの移動を止めました");
+  await expect(frame.locator("h1")).toContainText("PunyGuard blocked this page");
+  await expect(frame.locator("#details")).toBeHidden();
+  await expect(frame.locator("#actions")).toBeHidden();
 });
 
 test("an ASCII host with a Japanese path is not blocked", async ({ extension, server }) => {

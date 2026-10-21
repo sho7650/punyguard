@@ -11,6 +11,10 @@
     "message": "Blocking is off: the blocking rule could not be registered.",
     "description": "Tooltip line shown with the ! badge when updateDynamicRules failed."
   },
+  "problemContentScriptNotRegistered": {
+    "message": "Blocking is partly off: pages answered by a site's Service Worker are not blocked, because the content script could not be registered.",
+    "description": "Tooltip line shown with the ! badge when registering the content script failed."
+  },
   "problemNoSiteAccess": {
     "message": "Blocking is off: set site access to \"On all sites\".",
     "description": "Tooltip line shown with the ! badge when the extension cannot access all sites."

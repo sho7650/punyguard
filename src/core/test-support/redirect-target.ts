@@ -13,14 +13,13 @@ export const WARNING_PAGE = "chrome-extension://abcdefghijklmnop/blocked.html";
 /* oxlint-disable typescript/prefer-readonly-parameter-types */
 export function redirectTarget(url: string, settings: Settings = DEFAULT_SETTINGS): string | null {
   const patterns = buildBlockRules(WARNING_PAGE, settings).map((rule) => {
-    const { regexFilter, isUrlFilterCaseSensitive } = rule.condition;
+    const { regexFilter } = rule.condition;
     if (regexFilter === undefined) {
       throw new Error("Expected every rule to use a regexFilter");
     }
-    return {
-      rule,
-      pattern: new RegExp(regexFilter, isUrlFilterCaseSensitive === true ? "u" : "iu"),
-    };
+    // buildBlockRules never sets isUrlFilterCaseSensitive, and Chrome's default for it is
+    // false, so every rule matches case-insensitively.
+    return { rule, pattern: new RegExp(regexFilter, "iu") };
   });
   const matching = patterns.filter(({ pattern }) => pattern.test(url));
   const topPriority = Math.max(...matching.map(({ rule }) => rule.priority ?? 1));

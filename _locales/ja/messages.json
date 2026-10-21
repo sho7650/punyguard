@@ -11,6 +11,10 @@
     "message": "遮断が効いていません: 遮断ルールを登録できませんでした。",
     "description": "updateDynamicRules が失敗したとき、バッジの ! とともにツールチップに出す行。"
   },
+  "problemContentScriptNotRegistered": {
+    "message": "遮断が一部効いていません: content script を登録できなかったため、サイトの Service Worker が応答するページは遮断されません。",
+    "description": "content script の登録が失敗したとき、バッジの ! とともにツールチップに出す行。"
+  },
   "problemNoSiteAccess": {
     "message": "遮断が効いていません: サイトへのアクセスを「すべてのサイト」にしてください。",
     "description": "すべてのサイトへのアクセス権がないとき、バッジの ! とともにツールチップに出す行。"

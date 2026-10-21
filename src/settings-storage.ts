@@ -22,10 +22,8 @@ export function saveSettings(settings: Settings): Promise<void> {
 
 // Calls onChange when the saved settings change, from any page.
 export function onSettingsChanged(onChange: () => void): void {
-  // oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- mirrors Chrome's mutable StorageChange map
-  chrome.storage.local.onChanged.addListener((changes) => {
-    if (SETTINGS_KEY in changes) {
-      onChange();
-    }
+  // "settings" is the only key this extension keeps in storage.local, so every change is to it.
+  chrome.storage.local.onChanged.addListener(() => {
+    onChange();
   });
 }

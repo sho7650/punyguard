@@ -1,11 +1,19 @@
 // A local HTTP server that plays both an ordinary ASCII site and an IDN site. Chromium is
 // started with --host-resolver-rules so that both host names resolve to it.
 import { createServer, type Server, type ServerResponse } from "node:http";
+import type { AddressInfo } from "node:net";
+import type { BlockReason } from "./attacker-site.ts";
+import { type AttackerRoutes, type AttackerSite, createAttackerRoutes } from "./attacker-routes.ts";
+
+export type { AttackerVisit } from "./attacker-routes.ts";
 
 // аррӏө.com: five Cyrillic letters that Chrome 154 still showed as "apple.com"
 export const IDN_HOST = "xn--80a6aa68c8d.com";
 export const IDN_UNICODE_HOST = "аррӏө.com";
 export const ASCII_HOST = "ascii.test";
+// A plain host that the Service Worker tests open with user info, so that its Service Workers
+// stay apart from ASCII_HOST, which embeds the attacker's iframes and is where redirects land.
+export const USERINFO_HOST = "userinfo.test";
 export const IDN_CONTENT = "IDN CONTENT REACHED";
 // A documentation address (RFC 5737). Blocking redirects before any connection, so nothing
 // needs to answer there; a test that expects it to load would hang instead.
@@ -14,6 +22,8 @@ export const EMBEDDED_CONTENT = "EMBEDDED CONTENT REACHED";
 // The path that the embedded documents on the IP address host and the URL with user info load.
 // The user info never reaches the server, so the path is what tells these requests apart.
 export const EMBEDDED_PATH = "/embedded";
+// The user info of the attacker URLs with user info; the warning page shows it as user:***.
+export const ATTACKER_USERINFO = "user:secret";
 
 /** Where an embedding page points its embedded document. */
 // "userinfo" is on the ASCII host and "localhostUserinfo" on localhost, so the two share their
@@ -22,9 +32,12 @@ export type EmbedTarget = "idn" | "ip" | "userinfo" | "localhostUserinfo" | "asc
 /** The element that embeds the document. */
 export type EmbedElement = "iframe" | "object" | "embed";
 
-export interface TestServer {
+export interface TestServer extends AttackerSite {
   readonly port: number;
-  /** Paths requested on the IDN host; any entry means a request got past the block. */
+  /**
+   * Paths requested on the IDN host; any entry means a request got past the block. The attacker
+   * routes (attacker-routes.ts) are not logged: the Service Worker tests go by beacons instead.
+   */
   readonly idnRequests: readonly string[];
   /** Requests for EMBEDDED_PATH on any other host; any entry means an embedded document loaded. */
   readonly embeddedRequests: readonly string[];
@@ -32,6 +45,8 @@ export interface TestServer {
   asciiUrl: (path: string) => string;
   /** The page that embeds the target's document with the element. */
   embeddingUrl: (target: EmbedTarget, element: EmbedElement) => string;
+  /** Every origin that the Service Worker tests use, for secureOriginArgs (browser-flags.ts). */
+  readonly origins: readonly string[];
   close: () => Promise<void>;
 }
 
@@ -110,14 +125,44 @@ function embeddedUrl(target: EmbedTarget, port: number): string {
   return `http://${authorities[target]}:${port}${EMBEDDED_PATH}`;
 }
 
+// The origin of each block reason's attacker URLs, with the user info they are opened with.
+function attackerOrigin(reason: BlockReason, port: number, withUserinfo: boolean): string {
+  const hosts: Readonly<Record<BlockReason, string>> = {
+    idn: IDN_HOST,
+    ip: "127.0.0.1",
+    userinfo: withUserinfo ? `${ATTACKER_USERINFO}@${USERINFO_HOST}` : USERINFO_HOST,
+  };
+  return `http://${hosts[reason]}:${port}`;
+}
+
+const SERVICE_WORKER_HOSTS: readonly string[] = [IDN_HOST, "127.0.0.1", USERINFO_HOST, ASCII_HOST];
+
+// The port is known only once the server listens, hence functions.
+function plainRoutes(
+  idnUrl: (path: string) => string,
+  port: () => number,
+): Readonly<Record<string, Route>> {
+  return {
+    ...asciiRoutes(idnUrl),
+    ...embeddingRoutes((target) => embeddedUrl(target, port())),
+  };
+}
+
+function attackerRoutes(port: () => number): AttackerRoutes {
+  return createAttackerRoutes({
+    reasonOrigin: (reason, withUserinfo) => attackerOrigin(reason, port(), withUserinfo),
+    siteOrigin: (site) => `http://${site === "ascii" ? ASCII_HOST : "127.0.0.1"}:${port()}`,
+  });
+}
+
 async function listen(server: Server): Promise<number> {
   await new Promise<void>((resolve) => {
     server.listen(0, "127.0.0.1", resolve);
   });
-  const address = server.address();
-  if (address === null || typeof address === "string") {
-    throw new TypeError(`Expected a TCP address, got ${String(address)}`);
-  }
+  // After listen() on a host and port, address() is always an AddressInfo: it returns null only
+  // before listening or after close, and a string only for pipes.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- always an AddressInfo here (above)
+  const address = server.address() as AddressInfo;
   return address.port;
 }
 
@@ -126,6 +171,8 @@ function close(server: Server): Promise<void> {
     // The browser may still hold keep-alive connections, which close() would wait for.
     server.closeAllConnections();
     server.close((error) => {
+      // The fixture closes the server once, so error is never set; the branch only satisfies
+      // the callback's type.
       if (error === undefined) {
         resolve();
       } else {
@@ -141,26 +188,29 @@ export async function startServer(): Promise<TestServer> {
   let port = 0;
   const idnUrl = (path: string): string => `http://${IDN_HOST}:${port}${path}`;
   const asciiUrl = (path: string): string => `http://${ASCII_HOST}:${port}${path}`;
-  const routes = {
-    ...asciiRoutes(idnUrl),
-    ...embeddingRoutes((target) => embeddedUrl(target, port)),
-  };
+  const routes = plainRoutes(idnUrl, () => port);
+  const attacker = attackerRoutes(() => port);
 
   const server = createServer((request, response) => {
+    // Chromium always sends Host and http.Server always sets url; ?? only satisfies the
+    // optional types.
     const host = (request.headers.host ?? "").replace(/:\d+$/u, "");
     const path = request.url ?? "/";
+    const url = new URL(path, asciiUrl("/"));
+    if (attacker.respond(url, response)) {
+      return;
+    }
     if (host === IDN_HOST) {
       idnRequests.push(path);
       html(response, `<h1>${IDN_CONTENT}</h1>`);
       return;
     }
-    const pathname = new URL(path, asciiUrl("/")).pathname;
-    if (pathname === EMBEDDED_PATH) {
+    if (url.pathname === EMBEDDED_PATH) {
       embeddedRequests.push(path);
       html(response, `<h1>${EMBEDDED_CONTENT}</h1>`);
       return;
     }
-    const route = routes[pathname];
+    const route = routes[url.pathname];
     if (route === undefined) {
       html(response, `<h1>ASCII PAGE</h1>`);
     } else {
@@ -176,6 +226,8 @@ export async function startServer(): Promise<TestServer> {
     idnUrl,
     asciiUrl,
     embeddingUrl: (target, element) => asciiUrl(embeddingPath(target, element)),
+    ...attacker.site,
+    origins: SERVICE_WORKER_HOSTS.map((host) => `http://${host}:${port}`),
     close: () => close(server),
   };
 }
