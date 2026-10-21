@@ -228,3 +228,13 @@
 | V-4       | FR-6の行と同じ                                                                                                                                                                                                                                                            |                                                                                                       |
 | V-5       | C-1の行と同じ                                                                                                                                                                                                                                                             |                                                                                                       |
 | V-6       | 上の、checkとE2Eの結果                                                                                                                                                                                                                                                    |                                                                                                       |
+
+### Phase 6: CIの失敗への対処（2026-10-21）
+
+PR #14のCIで、E2Eが試行ごとに別の1件で失敗した。1回目はiframeのテスト（攻撃者ページの確定が0回）、2回目は「Close this tab」（クリックが「Target page, context or browser has been closed」で失敗）。CIのランナーはx64、4 vCPU、ワーカー2つで、Chromium 156.0.8078.4。macOSでは再現しなかったので、同じ版のPlaywright（1.64.1）とChromium（ビルド1248）を入れたLinuxのコンテナで、CPUを4つに絞って調べた（arm64）。
+
+- [x] 原因1を特定した: 新しく起動したレンダラーの`CommitLoad`がトレースに記録されないことがある。Service Workerの2つのspecを20回実行すると460件中6件で失敗し、トレースを書き出すと、640回の確定のうち5回でレンダラーの`CommitLoad`がなかった。ブラウザ側の`FrameCommittedInBrowser`は毎回あり、`dataLossOccurred`はすべてfalseだった。攻撃者ページの`CommitLoad`がないと確定が0回になり、警告ページの`CommitLoad`がないと警告ページの描画が攻撃者ページの描画として数えられた。攻撃者ページが描画された回はなかった。
+- [x] `e2e/support/paint-trace.ts`の数え方を変えた: 確定はブラウザ側の`FrameCommittedInBrowser`とその`processId`で区切り、そのプロセスのイベントだけを数える。区間はそのプロセスの`CommitLoad`があればそこから始める。ブラウザ側の確定から`CommitLoad`までに、同じプロセスの`Paint`が67回あり、どれも攻撃者ページが確定する前のものだった。Chromeのエラーページはブラウザ側では攻撃者のURLで確定するので、文書のURLはレンダラーの`CommitLoad`から取る。それがないと、エラーページを攻撃者ページと数え、テストは失敗する。
+- [x] 原因2を特定した: `locator.click`はマウスイベントへのChromeの応答を待ち、その前にタブが閉じると失敗する（Playwright 1.64.1のソース`crInput.ts`、`crConnection.ts`）。CPUを6倍か20倍に絞ると、80回中1回再現した。`e2e/warning-page.spec.ts`は、タブが閉じたときだけクリックの失敗を許すようにした。20倍に絞って300回すべて成功し、ボタンが閉じないようにすると失敗した。
+- [x] 修正後の結果: コンテナでService Workerの3つのspecを20回実行して760件すべて成功、E2E全体を5回実行して5回とも141件成功（修正前は5回中2回失敗）。macOSでは`pnpm run check`が333件成功、E2E全体が138件成功（スキップ3件）。
+- [ ] CIで通ることを確かめる。
