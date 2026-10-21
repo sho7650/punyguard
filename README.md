@@ -105,6 +105,7 @@ Settings loosened from the default (blocking URLs with user info or IP address h
 - If the warning page is the first page of a new tab, and you go to another page and then come back with the browser's back button, **Go back** is shown but does nothing (there is no earlier page). **Close this tab** still works.
 - A site's service worker still runs when it answers a navigation, even one that PunyGuard blocks. PunyGuard moves the page to the warning page, but it cannot stop the worker's own code ([P3](docs/decisions.md#p3-navigation-that-a-service-worker-answers-is-blocked-by-a-content-script)).
 - If a site's service worker answers with a redirect to another page, that page may show and run for a moment before PunyGuard replaces it with the warning page.
+- If a site's service worker answers with an SVG or XML document, the document may show for a moment before the warning page replaces it. Scripts in it do not run.
 - If a site's service worker relays a navigation to a URL with user info to the network, Chrome itself fails it and shows its own error page instead of the warning page. The page does not load, but the URL, password included, stays in the address bar and in the tab's back history. It does not go into Chrome's history. This happens with or without PunyGuard.
 - Right after PunyGuard is updated or reloaded, there is a fraction of a second, until it registers its content script again, when a navigation that a service worker answers is not blocked. Navigations that the blocking rules see are not affected, and a browser restart has no such gap.
 
