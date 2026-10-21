@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/sho7650/punyguard/compare/v0.3.0...v0.4.0) (2026-10-21)
+
+
+### Features
+
+* block navigations that a service worker answers ([e1cfa85](https://github.com/sho7650/punyguard/commit/e1cfa8561b28a14d6ec63edc5839b18543dfcc66))
+* block navigations that a service worker answers ([117af2e](https://github.com/sho7650/punyguard/commit/117af2e65a61d40600e93ef4cdf12415fb78138a))
+
+
+### Bug Fixes
+
+* catch a redirect that commits after an earlier navigation in the frame ([44a7632](https://github.com/sho7650/punyguard/commit/44a763270a272522cafffc00b977837e94810c57))
+* keep navigation starts in session storage so a held redirect is caught ([03d6da6](https://github.com/sho7650/punyguard/commit/03d6da6c35fae182c4b7b961ab39a236de169f1d))
+
 ## [0.3.0](https://github.com/sho7650/punyguard/compare/v0.2.0...v0.3.0) (2026-10-18)
 
 
