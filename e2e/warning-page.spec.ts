@@ -115,7 +115,17 @@ for (const from of ["a link", "a new tab"] as const) {
     }
     await expect(page.locator("#close-tab")).toBeVisible();
 
-    // The "close" event is the check: it times out if the tab stays open.
-    await Promise.all([page.waitForEvent("close"), page.locator("#close-tab").click()]);
+    // The "close" event is the check: it times out if the tab stays open. The click waits for
+    // Chrome to answer its mouse events, and the tab can close first: then the click fails with
+    // "Target page, context or browser has been closed" (once in CI, and 1 in 80 runs with the
+    // CPU throttled 6 or 20 times on 2026-10-21). So a failed click counts only if the tab stays.
+    const closed = page.waitForEvent("close");
+    await page
+      .locator("#close-tab")
+      .click()
+      .catch(async () => {
+        await closed;
+      });
+    await closed;
   });
 }
