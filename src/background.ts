@@ -93,17 +93,15 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
   navigationStarts.started(details);
 });
 // oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- mirrors Chrome's mutable callback details
-chrome.webNavigation.onErrorOccurred.addListener((details) => {
-  navigationStarts.ended(details);
-});
-// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- mirrors Chrome's mutable callback details
 chrome.webNavigation.onCommitted.addListener((details) => {
-  // Taken before the settings are read, so a navigation that starts meanwhile keeps its own.
-  const start = navigationStarts.ended(details);
+  const start = navigationStarts.redirectedFrom(details);
   if (start === undefined) {
     return;
   }
   moveRedirectedFrame(details, start).catch((error: unknown) => {
     console.error("Failed to send a redirected frame to the warning page", error);
   });
+});
+chrome.tabs.onRemoved.addListener((tabId) => {
+  navigationStarts.tabClosed(tabId);
 });

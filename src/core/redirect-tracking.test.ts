@@ -76,14 +76,54 @@ describe("redirectedFrameTarget follows the settings", () => {
   });
 });
 
+const REDIRECTED = ["server_redirect"] as const;
+
 describe("createStartTracker", () => {
-  test("hands back a blocked start once, when the navigation commits or fails", () => {
+  test("hands back a blocked start when the frame commits through a redirect", () => {
     const starts = createStartTracker();
     starts.started({ tabId: 1, frameId: 0, url: "https://paypal.com@evil.example/" });
-    expect(starts.ended({ tabId: 1, frameId: 0 })).toBe("https://paypal.com@evil.example/");
-    expect(starts.ended({ tabId: 1, frameId: 0 })).toBeUndefined();
+    expect(starts.redirectedFrom({ tabId: 1, frameId: 0, transitionQualifiers: REDIRECTED })).toBe(
+      "https://paypal.com@evil.example/",
+    );
   });
 
+  // A commit that no redirect led to is the navigation that started there, or one Chrome
+  // reports without a start, such as a blob: URL.
+  test.each([
+    { name: "no qualifier", transitionQualifiers: [] },
+    { name: "a client redirect", transitionQualifiers: ["client_redirect"] },
+    { name: "back or forward", transitionQualifiers: ["forward_back"] },
+  ] as const)("hands back nothing for a commit with $name", ({ transitionQualifiers }) => {
+    const starts = createStartTracker();
+    starts.started({ tabId: 1, frameId: 0, url: "https://paypal.com@evil.example/" });
+    expect(starts.redirectedFrom({ tabId: 1, frameId: 0, transitionQualifiers })).toBeUndefined();
+  });
+
+  // Chrome can commit the frame's earlier navigation after the blocked one has started
+  // (measured 2026-10-20).
+  test("still hands back the start after the earlier navigation commits without a redirect", () => {
+    const starts = createStartTracker();
+    starts.started({ tabId: 1, frameId: 0, url: "https://example.com/" });
+    starts.started({ tabId: 1, frameId: 0, url: "https://paypal.com@evil.example/" });
+    starts.redirectedFrom({ tabId: 1, frameId: 0, transitionQualifiers: [] });
+    expect(starts.redirectedFrom({ tabId: 1, frameId: 0, transitionQualifiers: REDIRECTED })).toBe(
+      "https://paypal.com@evil.example/",
+    );
+  });
+
+  // Two navigations that start at the same blocked URL can both land through a redirect
+  // (measured 2026-10-20), so a commit does not take the start away.
+  test("keeps the start after a commit, for every redirect that lands in the frame", () => {
+    const starts = createStartTracker();
+    starts.started({ tabId: 1, frameId: 0, url: "https://paypal.com@evil.example/" });
+    starts.started({ tabId: 1, frameId: 0, url: "https://paypal.com@evil.example/" });
+    const commit = { tabId: 1, frameId: 0, transitionQualifiers: REDIRECTED };
+    expect(starts.redirectedFrom(commit)).toBe("https://paypal.com@evil.example/");
+    expect(starts.redirectedFrom(commit)).toBe("https://paypal.com@evil.example/");
+  });
+});
+
+describe("createStartTracker across settings, navigations and tabs", () => {
   // The settings are read when the navigation commits, so a start counts if any setting could
   // block it. The URLs of other navigations are not kept.
   test.each([
@@ -93,15 +133,31 @@ describe("createStartTracker", () => {
   ] as const)("remembers $url only if a setting could block it", ({ url, expected }) => {
     const starts = createStartTracker();
     starts.started({ tabId: 1, frameId: 0, url });
-    expect(starts.ended({ tabId: 1, frameId: 0 })).toBe(expected);
+    expect(starts.redirectedFrom({ tabId: 1, frameId: 0, transitionQualifiers: REDIRECTED })).toBe(
+      expected,
+    );
   });
 
-  // Chrome can report the new navigation's start before the old one's failure.
   test("forgets a blocked start when a new navigation in the frame starts at a plain URL", () => {
     const starts = createStartTracker();
     starts.started({ tabId: 1, frameId: 0, url: "https://paypal.com@evil.example/" });
     starts.started({ tabId: 1, frameId: 0, url: "https://example.com/" });
-    expect(starts.ended({ tabId: 1, frameId: 0 })).toBeUndefined();
+    expect(
+      starts.redirectedFrom({ tabId: 1, frameId: 0, transitionQualifiers: REDIRECTED }),
+    ).toBeUndefined();
+  });
+
+  test("forgets every start in a tab when the tab closes", () => {
+    const starts = createStartTracker();
+    starts.started({ tabId: 1, frameId: 0, url: "https://paypal.com@evil.example/" });
+    starts.started({ tabId: 1, frameId: 3, url: "https://xn--80a6aa68c8d.com/" });
+    starts.started({ tabId: 2, frameId: 0, url: "http://203.0.113.5/" });
+    starts.tabClosed(1);
+    const redirected = (tabId: number, frameId: number): string | undefined =>
+      starts.redirectedFrom({ tabId, frameId, transitionQualifiers: REDIRECTED });
+    expect(redirected(1, 0)).toBeUndefined();
+    expect(redirected(1, 3)).toBeUndefined();
+    expect(redirected(2, 0)).toBe("http://203.0.113.5/");
   });
 
   test("keeps each frame of each tab apart", () => {
@@ -109,8 +165,10 @@ describe("createStartTracker", () => {
     starts.started({ tabId: 1, frameId: 0, url: "https://paypal.com@evil.example/" });
     starts.started({ tabId: 1, frameId: 3, url: "https://xn--80a6aa68c8d.com/" });
     starts.started({ tabId: 2, frameId: 0, url: "http://203.0.113.5/" });
-    expect(starts.ended({ tabId: 1, frameId: 3 })).toBe("https://xn--80a6aa68c8d.com/");
-    expect(starts.ended({ tabId: 2, frameId: 0 })).toBe("http://203.0.113.5/");
-    expect(starts.ended({ tabId: 1, frameId: 0 })).toBe("https://paypal.com@evil.example/");
+    const redirected = (tabId: number, frameId: number): string | undefined =>
+      starts.redirectedFrom({ tabId, frameId, transitionQualifiers: REDIRECTED });
+    expect(redirected(1, 3)).toBe("https://xn--80a6aa68c8d.com/");
+    expect(redirected(2, 0)).toBe("http://203.0.113.5/");
+    expect(redirected(1, 0)).toBe("https://paypal.com@evil.example/");
   });
 });
