@@ -12,14 +12,23 @@ export type BlockReason = "idn" | "ip" | "userinfo";
  * - redirectSameOrigin: redirects to a page on its own origin (without user info), which it
  *   builds itself
  * - redirectPlainHost: redirects to the attacker page on ASCII_HOST, served by the network
+ * - redirectAfterHold: redirects as redirectPlainHost does, but only once the test server lets
+ *   the visit's hold go (AttackerSite.releaseHold), so that a test can stop the extension's
+ *   worker in between
  */
-export type ServiceWorkerKind = "relay" | "synthetic" | "redirectSameOrigin" | "redirectPlainHost";
+export type ServiceWorkerKind =
+  | "relay"
+  | "synthetic"
+  | "redirectSameOrigin"
+  | "redirectPlainHost"
+  | "redirectAfterHold";
 
 export const SERVICE_WORKER_KINDS: readonly ServiceWorkerKind[] = [
   "relay",
   "synthetic",
   "redirectSameOrigin",
   "redirectPlainHost",
+  "redirectAfterHold",
 ];
 
 export const ATTACKER_CONTENT = "ATTACKER CONTENT REACHED";
@@ -30,6 +39,8 @@ export const REGISTRATION_PATH = "/sw/register";
 // Outside every Service Worker's scope, so only the network answers it.
 export const NETWORK_ATTACKER_PATH = "/attacker";
 export const BEACON_PATH = "/beacon";
+// Answered only when the test lets the visit's hold go.
+export const HOLD_PATH = "/hold";
 // The query parameter that carries the visit's ID to the attacker page and on to its beacon.
 export const VISIT_PARAMETER = "visit";
 
@@ -65,12 +76,18 @@ export function attackerPage(servedBy: ServedBy, beaconUrl: string): string {
   return `<!doctype html><meta charset="utf-8"><body style="background:#f00"><h1>${ATTACKER_CONTENT}</h1><script>navigator.sendBeacon("${beacon}");</script></body>`;
 }
 
+/** Where the Service Workers send what they need from the test server. */
+export interface ServiceWorkerTargets {
+  readonly beaconUrl: string;
+  readonly plainHostAttackerUrl: string;
+  readonly holdUrl: string;
+}
+
 // The response each kind builds, as JavaScript inside the fetch handler, where `url` is the
 // navigation's URL.
 function respondExpression(
   kind: ServiceWorkerKind,
-  beaconUrl: string,
-  plainHostAttackerUrl: string,
+  { beaconUrl, plainHostAttackerUrl, holdUrl }: ServiceWorkerTargets,
 ): string {
   const synthetic = `new Response(${JSON.stringify(attackerPage("serviceWorker", beaconUrl))}, { headers: { "content-type": "text/html" } })`;
   const expressions: Readonly<Record<ServiceWorkerKind, string>> = {
@@ -79,6 +96,8 @@ function respondExpression(
     // url.origin drops the user info, so a URL with user info lands on a plain URL.
     redirectSameOrigin: `url.pathname === "${scopePath(kind)}${SAME_ORIGIN_LANDING}" ? ${synthetic} : Response.redirect(url.origin + "${scopePath(kind)}${SAME_ORIGIN_LANDING}" + url.search, 302)`,
     redirectPlainHost: `Response.redirect(${JSON.stringify(plainHostAttackerUrl)} + url.search, 302)`,
+    // no-cors: the hold is on another origin and sends no CORS headers.
+    redirectAfterHold: `fetch(${JSON.stringify(holdUrl)} + url.search, { mode: "no-cors" }).then(() => Response.redirect(${JSON.stringify(plainHostAttackerUrl)} + url.search, 302))`,
   };
   return expressions[kind];
 }
@@ -87,13 +106,12 @@ function respondExpression(
 // test server whatever the kind.
 export function serviceWorkerScript(
   kind: ServiceWorkerKind,
-  beaconUrl: string,
-  plainHostAttackerUrl: string,
+  targets: ServiceWorkerTargets,
 ): string {
   return `self.addEventListener("fetch", (event) => {
   if (event.request.mode !== "navigate") return;
   const url = new URL(event.request.url);
-  event.respondWith(${respondExpression(kind, beaconUrl, plainHostAttackerUrl)});
+  event.respondWith(${respondExpression(kind, targets)});
 });`;
 }
 

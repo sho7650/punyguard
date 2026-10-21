@@ -6,6 +6,7 @@ import {
   type Beacon,
   BEACON_PATH,
   type BlockReason,
+  HOLD_PATH,
   isNetworkAttackerPath,
   NETWORK_ATTACKER_PATH,
   parseBeacon,
@@ -54,6 +55,10 @@ export interface AttackerSite {
   readonly registrationUrl: (reason: BlockReason) => string;
   /** The beacons that the visit's page sent. */
   readonly beaconsFor: (visit: AttackerVisit) => readonly Beacon[];
+  /** Whether the visit's redirectAfterHold Service Worker is waiting on its hold. */
+  readonly isHeld: (visit: AttackerVisit) => boolean;
+  /** Answers the visit's hold, so that its Service Worker redirects. */
+  readonly releaseHold: (visit: AttackerVisit) => void;
 }
 
 export interface AttackerRoutes {
@@ -79,11 +84,11 @@ function routeBody(
   const asciiOrigin = urls.siteOrigin("ascii");
   const kind = scriptKind(url.pathname);
   if (kind !== undefined) {
-    const script = serviceWorkerScript(
-      kind,
-      `${asciiOrigin}${BEACON_PATH}`,
-      `${asciiOrigin}${NETWORK_ATTACKER_PATH}`,
-    );
+    const script = serviceWorkerScript(kind, {
+      beaconUrl: `${asciiOrigin}${BEACON_PATH}`,
+      plainHostAttackerUrl: `${asciiOrigin}${NETWORK_ATTACKER_PATH}`,
+      holdUrl: `${asciiOrigin}${HOLD_PATH}`,
+    });
     return ["text/javascript", script];
   }
   if (url.pathname === REGISTRATION_PATH) {
@@ -105,6 +110,8 @@ function routeBody(
 export function createAttackerRoutes(urls: AttackerUrls): AttackerRoutes {
   const beacons: Beacon[] = [];
   const iframeSources: string[] = [];
+  // The open hold responses, by visit ID
+  const holds = new Map<string, ServerResponse>();
   let visits = 0;
   const site: AttackerSite = {
     beacons,
@@ -120,12 +127,23 @@ export function createAttackerRoutes(urls: AttackerUrls): AttackerRoutes {
     },
     registrationUrl: (reason) => `${urls.reasonOrigin(reason, false)}${REGISTRATION_PATH}`,
     beaconsFor: (visit) => beacons.filter((beacon) => beacon.visit === visit.id),
+    isHeld: (visit) => holds.has(visit.id),
+    releaseHold: (visit) => {
+      holds.get(visit.id)?.writeHead(204).end();
+      holds.delete(visit.id);
+    },
   };
   const respond = (url: URL, response: ServerResponse): boolean => {
     if (url.pathname === BEACON_PATH) {
       beacons.push(parseBeacon(url.searchParams));
       response.writeHead(204);
       response.end();
+      return true;
+    }
+    if (url.pathname === HOLD_PATH) {
+      // Nothing is sent until releaseHold, so the Service Worker's fetch stays pending. Only
+      // redirectAfterHold requests this path, always with the visit; ?? only narrows the type.
+      holds.set(url.searchParams.get(VISIT_PARAMETER) ?? "", response);
       return true;
     }
     const body = routeBody(url, urls, iframeSources);

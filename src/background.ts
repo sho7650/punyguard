@@ -62,7 +62,17 @@ chrome.action.onClicked.addListener(() => {
   });
 });
 
-const navigationStarts = createStartTracker();
+// The extension keeps nothing else in storage.session.
+const navigationStarts = createStartTracker({
+  get: async (key) => {
+    const items = await chrome.storage.session.get(key);
+    return items[key];
+  },
+  set: (key, value) => chrome.storage.session.set({ [key]: value }),
+  remove: (keys) => chrome.storage.session.remove([...keys]),
+  // getKeys() needs Chrome 130, and the manifest supports Chrome 126.
+  keys: async () => Object.keys(await chrome.storage.session.get(null)),
+});
 
 // The settings are read here, after the page has committed: the redirected page may already
 // have run (a known limit), and what matters is that it ends on the warning page.
@@ -90,18 +100,23 @@ async function moveRedirectedFrame(
 // Chrome has stopped it.
 // oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- mirrors Chrome's mutable callback details
 chrome.webNavigation.onBeforeNavigate.addListener((details) => {
-  navigationStarts.started(details);
+  // Called before the listener returns: the worker's storage calls run in the order they are
+  // made, so the commit's read, made later, sees this write.
+  navigationStarts.started(details).catch((error: unknown) => {
+    console.error("Failed to remember where a navigation started", error);
+  });
 });
 // oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- mirrors Chrome's mutable callback details
 chrome.webNavigation.onCommitted.addListener((details) => {
-  const start = navigationStarts.redirectedFrom(details);
-  if (start === undefined) {
-    return;
-  }
-  moveRedirectedFrame(details, start).catch((error: unknown) => {
-    console.error("Failed to send a redirected frame to the warning page", error);
-  });
+  navigationStarts
+    .redirectedFrom(details)
+    .then((start) => (start === undefined ? undefined : moveRedirectedFrame(details, start)))
+    .catch((error: unknown) => {
+      console.error("Failed to send a redirected frame to the warning page", error);
+    });
 });
 chrome.tabs.onRemoved.addListener((tabId) => {
-  navigationStarts.tabClosed(tabId);
+  navigationStarts.tabClosed(tabId).catch((error: unknown) => {
+    console.error("Failed to forget the navigation starts of a closed tab", error);
+  });
 });
