@@ -16,8 +16,12 @@ const CATEGORIES = [
 interface TraceEvent {
   readonly name: string;
   readonly ts: number;
+  /** The process that recorded the event. */
+  readonly pid: number;
   readonly frame: string | undefined;
   readonly url: string | undefined;
+  /** For FrameCommittedInBrowser: the renderer process the document committed in. */
+  readonly processId: number | undefined;
 }
 
 export interface AttackerPaints {
@@ -48,7 +52,8 @@ function optionalString(value: unknown): string | undefined {
 }
 
 // The frame sits in args.frame for firstPaint and firstContentfulPaint, and in args.data.frame
-// for CommitLoad and Paint (Chromium's trace events, as seen in Phase 0's traces).
+// for CommitLoad, FrameCommittedInBrowser and Paint (Chromium's trace events, as seen in Phase 0's
+// traces and in the traces dumped on 2026-10-21).
 function traceEvent(raw: unknown): TraceEvent {
   const event = record(raw);
   const args = record(event["args"]);
@@ -56,8 +61,10 @@ function traceEvent(raw: unknown): TraceEvent {
   return {
     name: String(event["name"]),
     ts: Number(event["ts"]),
+    pid: Number(event["pid"]),
     frame: optionalString(args["frame"]) ?? optionalString(data["frame"]),
     url: optionalString(data["url"]),
+    processId: typeof data["processId"] === "number" ? data["processId"] : undefined,
   };
 }
 
@@ -68,32 +75,70 @@ function isAttackerDocument(url: string, visit: AttackerVisit): boolean {
   return new URL(url).searchParams.get(VISIT_PARAMETER) === visit.id;
 }
 
-/**
- * Counts the paint events in each frame between the commit of an attacker document and the next
- * commit in that frame (or the end of the trace).
- */
-function countAttackerPaints(events: readonly TraceEvent[], visit: AttackerVisit): AttackerPaints {
-  const commits = events.filter((event) => event.name === "CommitLoad");
-  // CommitLoad always carries a URL; the undefined check only narrows the type. Math.min() of
-  // nothing is Infinity: with no later commit, the window stays open to the end.
-  const windows = commits
-    .filter((commit) => commit.url !== undefined && isAttackerDocument(commit.url, visit))
-    .map((commit) => ({
+/** Where one document's events can be in the trace. */
+interface DocumentWindow {
+  readonly frame: string | undefined;
+  readonly pid: number | undefined;
+  readonly url: string | undefined;
+  readonly start: number;
+  readonly end: number;
+}
+
+// The browser process records FrameCommittedInBrowser for every commit, with the renderer process
+// it committed in. That renderer's own CommitLoad can be missing: a renderer started after
+// Tracing.start can join the trace late and lose its first events. On 2026-10-21 (Linux, 4 CPUs,
+// 2 workers, as in CI) 5 of 640 commits had no CommitLoad, while every commit had its
+// FrameCommittedInBrowser, and the trace still reported no data loss. Without the CommitLoad the
+// attacker document counted as not committed, or the warning page's paints counted as the
+// attacker's. So the browser's commits bound each document, and only the events of the renderer
+// it committed in count. A renderer loses a prefix of its events, so when its CommitLoad is
+// missing so are its earlier events; when the CommitLoad is there, it starts the document, since
+// the same renderer painted before it (67 times on 2026-10-21) for what the frame showed before.
+// The CommitLoad also gives the document's URL: Chrome commits its error page for a refused
+// relay under the attacker's URL in the browser (service-worker-top-level.spec.ts). If that
+// CommitLoad is missing, the error page counts as an attacker document, and the test fails.
+function documentWindows(events: readonly TraceEvent[]): readonly DocumentWindow[] {
+  const commits = events.filter((event) => event.name === "FrameCommittedInBrowser");
+  return commits.map((commit) => {
+    // Math.min() of nothing is Infinity: with no later commit, the window stays open to the end.
+    const end = Math.min(
+      ...commits
+        .filter((next) => next.frame === commit.frame && next.ts > commit.ts)
+        .map((next) => next.ts),
+    );
+    const committedLoad = events.find(
+      (event) =>
+        event.name === "CommitLoad" &&
+        event.pid === commit.processId &&
+        event.frame === commit.frame &&
+        event.ts >= commit.ts &&
+        event.ts < end,
+    );
+    return {
       frame: commit.frame,
-      start: commit.ts,
-      end: Math.min(
-        ...commits
-          .filter((next) => next.frame === commit.frame && next.ts > commit.ts)
-          .map((next) => next.ts),
-      ),
-    }));
+      pid: commit.processId,
+      url: committedLoad?.url ?? commit.url,
+      start: committedLoad?.ts ?? commit.ts,
+      end,
+    };
+  });
+}
+
+/** Counts the paint events of each attacker document, in its frame and its renderer. */
+function countAttackerPaints(events: readonly TraceEvent[], visit: AttackerVisit): AttackerPaints {
+  const windows = documentWindows(events).filter(
+    (window) => window.url !== undefined && isAttackerDocument(window.url, visit),
+  );
   const count = (name: string): number =>
     events.filter(
       (event) =>
         event.name === name &&
         windows.some(
           (window) =>
-            window.frame === event.frame && event.ts >= window.start && event.ts < window.end,
+            window.frame === event.frame &&
+            window.pid === event.pid &&
+            event.ts >= window.start &&
+            event.ts < window.end,
         ),
     ).length;
   return {
