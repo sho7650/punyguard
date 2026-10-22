@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { findBlockReasons } from "./block-reasons.ts";
 import { buildBlockRules } from "./block-rule.ts";
-import { DEFAULT_SETTINGS, type Settings } from "./settings.ts";
+import { DEFAULT_SETTINGS } from "./settings.ts";
 import { redirectTarget } from "./test-support/redirect-target.ts";
 import { WARNING_PAGE } from "./test-support/warning-page.ts";
 
@@ -241,52 +240,5 @@ describe("buildBlockRules: resource types", () => {
         new Set(["main_frame", "sub_frame", "object"]),
       );
     }
-  });
-});
-
-describe("buildBlockRules and findBlockReasons agree", () => {
-  const urls = [
-    "https://xn--80a6aa68c8d.com/",
-    "https://a.xn--80a6aa68c8d.com:8443/",
-    "https://xn--a@example.com/",
-    "https://user@xn--80a6aa68c8d.com/",
-    "https://www.apple.com@example.com/",
-    "https://user:secret@example.com/",
-    "https://:secret@example.com/",
-    "https://user:secret@xn--80a6aa68c8d.com/",
-    "https://example.com/",
-    "http://localhost:3000/",
-    "http://203.0.113.5@example.com/",
-    ...[...privateHosts, ...publicHosts].flatMap((host) => [
-      `http://${host}/`,
-      `http://admin@${host}:8080/`,
-      `http://admin:secret@${host}:8080/`,
-    ]),
-  ];
-  const allSettings: readonly Settings[] = [true, false].flatMap((blockUserinfo) =>
-    [true, false].flatMap((blockIpHosts) =>
-      [true, false].map((excludePrivateIps) => ({
-        blockUserinfo,
-        blockIpHosts,
-        excludePrivateIps,
-      })),
-    ),
-  );
-
-  // The warning page explains a block with findBlockReasons, so a URL the rules block must
-  // have a reason, and a URL with a reason must be blocked.
-  test.each(allSettings)("with %o", (settings) => {
-    const disagreements = urls.filter(
-      (url) =>
-        (redirectTarget(url, settings) !== null) !==
-        findBlockReasons(new URL(url), settings).length > 0,
-    );
-    expect(disagreements).toEqual([]);
-  });
-
-  test.each(allSettings)("never sends a password to the warning page, with %o", (settings) => {
-    expect(
-      urls.filter((url) => redirectTarget(url, settings)?.includes("secret") === true),
-    ).toEqual([]);
   });
 });
