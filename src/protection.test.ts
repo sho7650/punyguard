@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { createProtector, ensureProtection } from "./protection.ts";
-import { DEFAULT_SETTINGS, type Settings } from "./settings.ts";
+import { DEFAULT_SETTINGS, type Settings } from "./settings/settings.ts";
 import { createFakeBrowser } from "./test-support/fake-browser.ts";
 
 describe("ensureProtection when protection works", () => {

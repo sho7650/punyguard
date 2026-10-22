@@ -4,9 +4,9 @@ import {
   redirectedFrameTarget,
   type StartTracker,
 } from "./redirect-tracking.ts";
-import { DEFAULT_SETTINGS } from "./settings.ts";
-import { createFakeStartStore } from "./test-support/fake-start-store.ts";
-import { WARNING_PAGE } from "./test-support/warning-page.ts";
+import { DEFAULT_SETTINGS } from "../settings/settings.ts";
+import { createFakeStartStore } from "../test-support/fake-start-store.ts";
+import { WARNING_PAGE } from "../test-support/warning-page.ts";
 
 describe("redirectedFrameTarget", () => {
   test("sends a frame whose blocked navigation was redirected to a plain page to the warning page", () => {

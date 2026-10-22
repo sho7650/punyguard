@@ -1,5 +1,5 @@
 import { isIpAddressHost, isPrivateIpAddress } from "./ip-address.ts";
-import type { Settings } from "./settings.ts";
+import type { Settings } from "../settings/settings.ts";
 
 // The grounds the warning page explains (CONTEXT.md "遮断理由"), in the order it shows them.
 export type BlockReason = "idnHost" | "userinfo" | "ipHost";

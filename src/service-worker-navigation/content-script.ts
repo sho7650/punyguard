@@ -1,4 +1,4 @@
-import { SETTING_NAMES, type Settings, settingsFrom } from "./settings.ts";
+import { SETTING_NAMES, type Settings, settingsFrom } from "../settings/settings.ts";
 
 // A file Chrome loads before the content script, written into dist/ by scripts/build.ts
 export interface SettingsScript {

@@ -1,6 +1,6 @@
 // Runs URLs through the rules buildBlockRules makes, the way Chrome would, for the unit tests.
-import { buildBlockRules } from "../block-rule.ts";
-import { DEFAULT_SETTINGS, type Settings } from "../settings.ts";
+import { buildBlockRules } from "../blocking/block-rule.ts";
+import { DEFAULT_SETTINGS, type Settings } from "../settings/settings.ts";
 import { WARNING_PAGE } from "./warning-page.ts";
 
 // What Chrome does with a navigation to the URL under these rules: the IDs of the rules that

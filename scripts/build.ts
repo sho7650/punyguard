@@ -5,11 +5,17 @@ import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import * as esbuild from "esbuild";
 import packageJson from "../package.json" with { type: "json" };
-import { settingsScripts } from "../src/core/content-script.ts";
+import { settingsScripts } from "../src/service-worker-navigation/content-script.ts";
 
 const OUT_DIR = "dist";
 
-const ENTRY_POINTS = ["src/background.ts", "src/blocked.ts", "src/content.ts", "src/options.ts"];
+// The output name of each bundled script, which manifest.json and the pages refer to
+const ENTRY_POINTS: Readonly<Record<string, string>> = {
+  background: "src/background.ts",
+  blocked: "src/warning-page/blocked.ts",
+  content: "src/service-worker-navigation/content.ts",
+  options: "src/settings/options.ts",
+};
 
 interface StaticFile {
   readonly from: string;
@@ -34,10 +40,10 @@ function dependencyLicenses(): StaticFile[] {
 // Files that are not bundled and are copied into dist/ as they are.
 const STATIC_FILES: readonly StaticFile[] = [
   { from: "manifest.json", to: "manifest.json" },
-  { from: "src/blocked.html", to: "blocked.html" },
-  { from: "src/blocked.css", to: "blocked.css" },
-  { from: "src/options.html", to: "options.html" },
-  { from: "src/options.css", to: "options.css" },
+  { from: "src/warning-page/blocked.html", to: "blocked.html" },
+  { from: "src/warning-page/blocked.css", to: "blocked.css" },
+  { from: "src/settings/options.html", to: "options.html" },
+  { from: "src/settings/options.css", to: "options.css" },
   { from: "_locales", to: "_locales" },
   { from: "icons", to: "icons" },
   { from: "LICENSE", to: "LICENSE" },
@@ -95,7 +101,8 @@ function watchStaticFile(file: StaticFile, onChange: () => void): void {
 }
 
 // The scripts that hand the content script its settings, one per combination of settings
-// (src/core/content-script.ts). They only change with the source, so watch mode writes them once.
+// (src/service-worker-navigation/content-script.ts). They only change with the source, so watch
+// mode writes them once.
 async function writeSettingsScripts(): Promise<void> {
   await Promise.all(
     settingsScripts().map(async ({ path: file, source }) => {

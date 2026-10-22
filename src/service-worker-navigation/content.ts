@@ -1,8 +1,8 @@
 // Sends a page that a Service Worker answered, which the block rules never see, to the warning
 // page (ADR-0004). Runs at document_start in every frame, so it decides before the page's own
 // scripts run. It reads only the page's URL.
-import { declaredSettings } from "./core/content-script.ts";
-import { warningTarget } from "./core/warning-target.ts";
+import { declaredSettings } from "./content-script.ts";
+import { warningTarget } from "./warning-target.ts";
 
 const target = warningTarget(
   document.URL,

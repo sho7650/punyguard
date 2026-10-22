@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { DEFAULT_SETTINGS } from "./settings.ts";
+import { DEFAULT_SETTINGS } from "../settings/settings.ts";
 import { warningTarget } from "./warning-target.ts";
-import { WARNING_PAGE } from "./test-support/warning-page.ts";
+import { WARNING_PAGE } from "../test-support/warning-page.ts";
 
 describe("warningTarget", () => {
   test("sends a page on an IDN host to the warning page with its URL in the fragment", () => {

@@ -1,5 +1,5 @@
-import { DEFAULT_SETTINGS, type Settings } from "./settings.ts";
-import { maskPassword } from "./blocked-url.ts";
+import { DEFAULT_SETTINGS, type Settings } from "../settings/settings.ts";
+import { maskPassword } from "../blocking/password-mask.ts";
 import { meetsBlockReason, warningTarget } from "./warning-target.ts";
 
 // A navigation in one frame, from the URL it started at to the URL it committed at

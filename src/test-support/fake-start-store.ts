@@ -1,5 +1,5 @@
 // An in-memory StartStore, standing in for chrome.storage.session in the unit tests.
-import type { StartStore } from "../redirect-tracking.ts";
+import type { StartStore } from "../service-worker-navigation/redirect-tracking.ts";
 
 export interface FakeStartStore {
   readonly store: StartStore;

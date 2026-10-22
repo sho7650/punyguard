@@ -19,11 +19,11 @@ export default defineConfig({
         "src/**/*.test.ts",
         "src/**/test-support/**",
         "src/background.ts",
-        "src/blocked.ts",
-        "src/content.ts",
-        "src/options.ts",
-        "src/localize.ts",
-        "src/settings-storage.ts",
+        "src/warning-page/blocked.ts",
+        "src/service-worker-navigation/content.ts",
+        "src/settings/options.ts",
+        "src/i18n/localize.ts",
+        "src/settings/settings-storage.ts",
       ],
       // Enforced from day one to keep tests first (D9)
       thresholds: {

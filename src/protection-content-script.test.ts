@@ -1,7 +1,7 @@
 // ensureProtection keeping the content script registered (ADR-0004). The block rules, site
 // access and the tooltip are in protection.test.ts.
 import { describe, expect, test } from "vitest";
-import { contentScriptRegistration } from "./content-script.ts";
+import { contentScriptRegistration } from "./service-worker-navigation/content-script.ts";
 import { ensureProtection } from "./protection.ts";
 import { createFakeBrowser } from "./test-support/fake-browser.ts";
 

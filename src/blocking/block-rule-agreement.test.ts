@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
 import { type BlockReason, findBlockReasons } from "./block-reasons.ts";
 import { isIpAddressHost } from "./ip-address.ts";
-import type { Settings } from "./settings.ts";
-import { decideByRules } from "./test-support/redirect-target.ts";
-import { WARNING_PAGE } from "./test-support/warning-page.ts";
-import { maskPassword } from "./blocked-url.ts";
+import type { Settings } from "../settings/settings.ts";
+import { decideByRules } from "../test-support/redirect-target.ts";
+import { WARNING_PAGE } from "../test-support/warning-page.ts";
+import { maskPassword } from "./password-mask.ts";
 
 // Hosts as a user or a page might write them; new URL() canonicalizes them the way Chrome does
 // before it matches the rules (3232235521 becomes 192.168.0.1, [::ffff:192.168.0.1] becomes

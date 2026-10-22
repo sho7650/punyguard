@@ -1,6 +1,6 @@
 // Stands in for the browser APIs that ensureProtection uses, for the unit tests.
 import type { ProtectionDeps } from "../protection.ts";
-import { DEFAULT_SETTINGS, type Settings } from "../settings.ts";
+import { DEFAULT_SETTINGS, type Settings } from "../settings/settings.ts";
 import { WARNING_PAGE } from "./warning-page.ts";
 
 export interface FakeBrowserOptions {

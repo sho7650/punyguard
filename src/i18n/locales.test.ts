@@ -4,10 +4,10 @@
 // code uses has a message in both catalogs.
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import en from "../_locales/en/messages.json" with { type: "json" };
-import ja from "../_locales/ja/messages.json" with { type: "json" };
-import { SCRIPT_NAMES } from "./core/host-description.ts";
-import { PROTECTION_MESSAGE_KEYS } from "./core/protection.ts";
+import en from "../../_locales/en/messages.json" with { type: "json" };
+import ja from "../../_locales/ja/messages.json" with { type: "json" };
+import { SCRIPT_NAMES } from "../warning-page/host-description.ts";
+import { PROTECTION_MESSAGE_KEYS } from "../protection.ts";
 
 const catalogs: Readonly<Record<string, Readonly<Record<string, { readonly message: string }>>>> = {
   ja,
@@ -21,8 +21,8 @@ function pageKeys(page: string): string[] {
   );
 }
 
-const blockedPageKeys = pageKeys("blocked.html");
-const optionsPageKeys = pageKeys("options.html");
+const blockedPageKeys = pageKeys("../warning-page/blocked.html");
+const optionsPageKeys = pageKeys("../settings/options.html");
 
 const usedKeys = [
   ...PROTECTION_MESSAGE_KEYS,

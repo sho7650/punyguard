@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { buildBlockRules } from "./block-rule.ts";
-import { DEFAULT_SETTINGS } from "./settings.ts";
-import { redirectTarget } from "./test-support/redirect-target.ts";
-import { WARNING_PAGE } from "./test-support/warning-page.ts";
+import { DEFAULT_SETTINGS } from "../settings/settings.ts";
+import { redirectTarget } from "../test-support/redirect-target.ts";
+import { WARNING_PAGE } from "../test-support/warning-page.ts";
 
 // Hosts as Chrome canonicalizes them, at both ends of each range. An IPv4-mapped IPv6 host
 // carries the IPv4 address in its last two groups: [::ffff:c0a8:1] is 192.168.0.1.

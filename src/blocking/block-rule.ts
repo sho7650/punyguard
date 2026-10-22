@@ -5,8 +5,8 @@ import {
   PRIVATE_IPV6_PATTERN,
   PRIVATE_MAPPED_IPV4_PATTERN,
 } from "./ip-address.ts";
-import { MASKED_PASSWORD } from "./blocked-url.ts";
-import type { Settings } from "./settings.ts";
+import { MASKED_PASSWORD } from "./password-mask.ts";
+import type { Settings } from "../settings/settings.ts";
 
 const IDN_RULE_ID = 1;
 const USERINFO_RULE_ID = 2;

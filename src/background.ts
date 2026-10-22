@@ -1,13 +1,13 @@
 // Keeps the block rules and the content script registered for the current settings and reports
 // through the toolbar badge when blocking is off. Also sends frames that a Service Worker redirected away from a
 // blocked URL to the warning page (ADR-0004).
-import { createProtector } from "./core/protection.ts";
+import { createProtector } from "./protection.ts";
 import {
   createStartTracker,
   type FrameUrl,
   redirectedFrameTarget,
-} from "./core/redirect-tracking.ts";
-import { loadSavedSettings, onSettingsChanged } from "./settings-storage.ts";
+} from "./service-worker-navigation/redirect-tracking.ts";
+import { loadSavedSettings, onSettingsChanged } from "./settings/settings-storage.ts";
 
 const WARNING_PAGE_URL = chrome.runtime.getURL("blocked.html");
 

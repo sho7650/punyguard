@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { findBlockReasons } from "./block-reasons.ts";
-import { DEFAULT_SETTINGS } from "./settings.ts";
+import { DEFAULT_SETTINGS } from "../settings/settings.ts";
 
 function reasons(href: string, settings = DEFAULT_SETTINGS): readonly string[] {
   return findBlockReasons(new URL(href), settings);

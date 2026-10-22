@@ -1,6 +1,6 @@
 // Reads and writes the settings in chrome.storage.local, shared by the service worker, the
 // warning page and the options page. Local only: nothing is synced (ADR-0003).
-import { loadSettings, type Settings } from "./core/settings.ts";
+import { loadSettings, type Settings } from "./settings.ts";
 
 const SETTINGS_KEY = "settings";
 

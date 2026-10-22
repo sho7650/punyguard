@@ -1,8 +1,8 @@
 // The settings apply to navigations a Service Worker answers as they do to the others: a
 // loosened reason lets the Service Worker's page through, and every change applies from the
 // very next navigation, both ways (requirements FR-4, FR-5, V-3).
-import { buildBlockRules } from "../src/core/block-rule.ts";
-import { DEFAULT_SETTINGS, type Settings } from "../src/core/settings.ts";
+import { buildBlockRules } from "../src/blocking/block-rule.ts";
+import { DEFAULT_SETTINGS, type Settings } from "../src/settings/settings.ts";
 import type { BlockReason } from "./support/attacker-site.ts";
 import { saveSettings, type Extension } from "./support/extension.ts";
 import { test } from "./support/service-worker-fixtures.ts";
@@ -21,7 +21,7 @@ function save(extension: Extension, settings: Settings): Promise<void> {
 // Each setting the user can loosen, and the reason whose Service Worker page it lets through.
 // 127.0.0.1, the only IP address host the Service Workers are seeded on, is a private address.
 // That a public address stays blocked while private ones are excluded is decided by the same
-// findBlockReasons for both paths, and src/core/block-reasons.test.ts checks it; no Service
+// findBlockReasons for both paths, and src/blocking/block-reasons.test.ts checks it; no Service
 // Worker can be seeded on a public address here.
 const LOOSENINGS: readonly {
   readonly name: string;
@@ -67,7 +67,7 @@ test.describe("a setting applies to a Service Worker's page from the next naviga
   }
 });
 
-// IDN hosts have no setting (src/core/settings.ts), so loosening everything else leaves them
+// IDN hosts have no setting (src/settings/settings.ts), so loosening everything else leaves them
 // blocked.
 test("with every setting loosened, a Service Worker's page on an IDN host is blocked", async ({
   extension,

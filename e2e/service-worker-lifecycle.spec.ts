@@ -17,8 +17,8 @@
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { contentScriptRegistration } from "../src/core/content-script.ts";
-import { DEFAULT_SETTINGS } from "../src/core/settings.ts";
+import { contentScriptRegistration } from "../src/service-worker-navigation/content-script.ts";
+import { DEFAULT_SETTINGS } from "../src/settings/settings.ts";
 import { secureOriginArgs } from "./support/browser-flags.ts";
 import {
   DIST,

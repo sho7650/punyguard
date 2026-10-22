@@ -1,6 +1,6 @@
-import { findBlockReasons } from "./block-reasons.ts";
-import { BLOCKED_PROTOCOLS, maskPassword } from "./blocked-url.ts";
-import type { Settings } from "./settings.ts";
+import { findBlockReasons } from "../blocking/block-reasons.ts";
+import { BLOCKED_PROTOCOLS, maskPassword } from "../blocking/password-mask.ts";
+import type { Settings } from "../settings/settings.ts";
 
 // Whether the settings block this URL, like the block rules do: only http and https URLs.
 // href is document.URL or a webNavigation URL, both already parsed by Chrome, so it always

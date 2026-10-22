@@ -1,11 +1,12 @@
 // Fills in the warning page. The fragment is untrusted: any page can open blocked.html with
 // a fragment of its choice, so everything from it is written with textContent and the
 // original URL is never turned into a link.
-import { findBlockReasons, type BlockReason } from "./core/block-reasons.ts";
-import { maskPassword, parseBlockedUrl } from "./core/blocked-url.ts";
-import { describeHost, type HostCharacter } from "./core/host-description.ts";
-import { localize } from "./localize.ts";
-import { loadSavedSettings } from "./settings-storage.ts";
+import { findBlockReasons, type BlockReason } from "../blocking/block-reasons.ts";
+import { maskPassword } from "../blocking/password-mask.ts";
+import { parseBlockedUrl } from "./blocked-url.ts";
+import { describeHost, type HostCharacter } from "./host-description.ts";
+import { localize } from "../i18n/localize.ts";
+import { loadSavedSettings } from "../settings/settings-storage.ts";
 
 function requireElement<T extends HTMLElement>(id: string, type: new () => T): T {
   const element = document.querySelector(`#${id}`);
@@ -17,7 +18,7 @@ function requireElement<T extends HTMLElement>(id: string, type: new () => T): T
   return element;
 }
 
-// Every name scriptOf returns has a script<Name> message, and src/locales.test.ts checks both
+// Every name scriptOf returns has a script<Name> message, and src/i18n/locales.test.ts checks both
 // catalogs for them, so the lookup never comes back empty.
 function scriptName(script: string): string {
   return chrome.i18n.getMessage(`script${script}`);

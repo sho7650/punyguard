@@ -2,7 +2,7 @@
 import { createContext, runInContext } from "node:vm";
 import { describe, expect, test } from "vitest";
 import { contentScriptRegistration, declaredSettings, settingsScripts } from "./content-script.ts";
-import { DEFAULT_SETTINGS, type Settings } from "./settings.ts";
+import { DEFAULT_SETTINGS, type Settings } from "../settings/settings.ts";
 
 const everySettings: readonly Settings[] = [false, true].flatMap((blockUserinfo) =>
   [false, true].flatMap((blockIpHosts) =>
