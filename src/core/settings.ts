@@ -1,10 +1,12 @@
-// What the user can loosen on the options page. IDN hosts are always blocked (ADR-0001), so
-// they have no setting.
-export interface Settings {
-  readonly blockUserinfo: boolean;
-  readonly blockIpHosts: boolean;
-  readonly excludePrivateIps: boolean;
-}
+// What the user can loosen on the options page, one on/off switch each. IDN hosts are always
+// blocked (ADR-0001), so they have no setting. The names are the keys saved in storage
+// (ADR-0005) and the ids of the checkboxes in options.html. The order is the order of the
+// digits in the settings script names (content-script.ts).
+export const SETTING_NAMES = ["blockUserinfo", "blockIpHosts", "excludePrivateIps"] as const;
+
+export type SettingName = (typeof SETTING_NAMES)[number];
+
+export type Settings = Readonly<Record<SettingName, boolean>>;
 
 // Everything blocked: the state after install and whenever the stored settings are unusable.
 export const DEFAULT_SETTINGS: Settings = {
@@ -13,19 +15,20 @@ export const DEFAULT_SETTINGS: Settings = {
   excludePrivateIps: false,
 };
 
-const SETTING_NAMES = ["blockUserinfo", "blockIpHosts", "excludePrivateIps"] as const;
+// Builds Settings from the value of each setting, given its name and its place in SETTING_NAMES.
+export function settingsFrom(valueOf: (name: SettingName, index: number) => boolean): Settings {
+  const entries = SETTING_NAMES.map((name, index) => [name, valueOf(name, index)]);
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- one entry per SettingName
+  return Object.fromEntries(entries) as Settings;
+}
 
+// Keeps only the settings, so anything else in the saved object is dropped.
 function parseSettings(saved: unknown): Settings | null {
   if (typeof saved !== "object" || saved === null) {
     return null;
   }
-  const [blockUserinfo, blockIpHosts, excludePrivateIps] = SETTING_NAMES.map((name): unknown =>
-    Reflect.get(saved, name),
-  );
-  return typeof blockUserinfo === "boolean" &&
-    typeof blockIpHosts === "boolean" &&
-    typeof excludePrivateIps === "boolean"
-    ? { blockUserinfo, blockIpHosts, excludePrivateIps }
+  return SETTING_NAMES.every((name) => typeof Reflect.get(saved, name) === "boolean")
+    ? settingsFrom((name) => Reflect.get(saved, name) === true)
     : null;
 }
 

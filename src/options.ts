@@ -1,15 +1,7 @@
 // The options page. Each change is saved at once; there is no save button.
-import type { Settings } from "./core/settings.ts";
+import { SETTING_NAMES, type SettingName, type Settings, settingsFrom } from "./core/settings.ts";
 import { localize } from "./localize.ts";
 import { loadSavedSettings, onSettingsChanged, saveSettings } from "./settings-storage.ts";
-
-type SettingName = keyof Settings;
-
-const SETTING_NAMES: readonly SettingName[] = [
-  "blockUserinfo",
-  "blockIpHosts",
-  "excludePrivateIps",
-];
 
 function checkbox(name: SettingName): HTMLInputElement {
   const element = document.querySelector(`#${name}`);
@@ -31,11 +23,7 @@ function showSettings(settings: Settings): void {
 }
 
 function readForm(): Settings {
-  return {
-    blockUserinfo: checkbox("blockUserinfo").checked,
-    blockIpHosts: checkbox("blockIpHosts").checked,
-    excludePrivateIps: checkbox("excludePrivateIps").checked,
-  };
+  return settingsFrom((name) => checkbox(name).checked);
 }
 
 function showSaveFailed(failed: boolean): void {

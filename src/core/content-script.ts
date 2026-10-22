@@ -1,4 +1,4 @@
-import type { Settings } from "./settings.ts";
+import { SETTING_NAMES, type Settings, settingsFrom } from "./settings.ts";
 
 // A file Chrome loads before the content script, written into dist/ by scripts/build.ts
 export interface SettingsScript {
@@ -12,19 +12,20 @@ export interface SettingsScript {
 // cannot see or change that world.
 const SETTINGS_GLOBAL = "punyguardSettings";
 
-const EVERY_SETTINGS: readonly Settings[] = [false, true].flatMap((blockUserinfo) =>
-  [false, true].flatMap((blockIpHosts) =>
-    [false, true].map((excludePrivateIps) => ({ blockUserinfo, blockIpHosts, excludePrivateIps })),
-  ),
-);
-
-// One digit per setting, in the order of Settings: content-settings/110.js is the default.
+// One digit per setting, in the order of SETTING_NAMES: content-settings/110.js is the default.
 function settingsScriptPath(settings: Settings): string {
-  const digits = [settings.blockUserinfo, settings.blockIpHosts, settings.excludePrivateIps]
-    .map(Number)
-    .join("");
+  const digits = SETTING_NAMES.map((name) => Number(settings[name])).join("");
   return `content-settings/${digits}.js`;
 }
+
+// Counting in binary from 0 to 11...1 goes through the digits of every combination.
+const EVERY_SETTINGS: readonly Settings[] = Array.from(
+  { length: 2 ** SETTING_NAMES.length },
+  (_, count) => {
+    const digits = count.toString(2).padStart(SETTING_NAMES.length, "0");
+    return settingsFrom((_name, index) => digits[index] === "1");
+  },
+);
 
 export function settingsScripts(): readonly SettingsScript[] {
   return EVERY_SETTINGS.map((settings) => ({
