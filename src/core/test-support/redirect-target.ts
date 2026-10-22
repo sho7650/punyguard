@@ -2,7 +2,7 @@
 import { buildBlockRules } from "../block-rule.ts";
 import { DEFAULT_SETTINGS, type Settings } from "../settings.ts";
 
-export const WARNING_PAGE = "chrome-extension://abcdefghijklmnop/blocked.html";
+import { WARNING_PAGE } from "./warning-page.ts";
 
 // Where Chrome sends a navigation to the URL under these rules, or null when it lets it through.
 // Chrome picks the matching rule with the highest priority, and at the same priority an allow

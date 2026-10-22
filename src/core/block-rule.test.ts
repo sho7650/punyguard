@@ -2,7 +2,8 @@ import { describe, expect, test } from "vitest";
 import { findBlockReasons } from "./block-reasons.ts";
 import { buildBlockRules } from "./block-rule.ts";
 import { DEFAULT_SETTINGS, type Settings } from "./settings.ts";
-import { redirectTarget, WARNING_PAGE } from "./test-support/redirect-target.ts";
+import { redirectTarget } from "./test-support/redirect-target.ts";
+import { WARNING_PAGE } from "./test-support/warning-page.ts";
 
 // Hosts as Chrome canonicalizes them, at both ends of each range. An IPv4-mapped IPv6 host
 // carries the IPv4 address in its last two groups: [::ffff:c0a8:1] is 192.168.0.1.
@@ -68,13 +69,13 @@ const publicHosts = [
 describe("buildBlockRules: IDN hosts", () => {
   test("redirects a URL whose IDN host starts with xn-- to the warning page with the original URL", () => {
     expect(redirectTarget("https://xn--80a6aa68c8d.com/login?next=/")).toBe(
-      "chrome-extension://abcdefghijklmnop/blocked.html#https://xn--80a6aa68c8d.com/login?next=/",
+      `${WARNING_PAGE}#https://xn--80a6aa68c8d.com/login?next=/`,
     );
   });
 
   test("blocks an IDN label that is not the first label of the host", () => {
     expect(redirectTarget("http://login.xn--80a6aa68c8d.com/")).toBe(
-      "chrome-extension://abcdefghijklmnop/blocked.html#http://login.xn--80a6aa68c8d.com/",
+      `${WARNING_PAGE}#http://login.xn--80a6aa68c8d.com/`,
     );
   });
 
@@ -84,7 +85,7 @@ describe("buildBlockRules: IDN hosts", () => {
         ...DEFAULT_SETTINGS,
         blockUserinfo: false,
       }),
-    ).toBe("chrome-extension://abcdefghijklmnop/blocked.html#https://user@xn--80a6aa68c8d.com/");
+    ).toBe(`${WARNING_PAGE}#https://user@xn--80a6aa68c8d.com/`);
   });
 
   test.each([
@@ -98,7 +99,7 @@ describe("buildBlockRules: IDN hosts", () => {
 describe("buildBlockRules: userinfo", () => {
   test("redirects a URL with userinfo to the warning page with the original URL", () => {
     expect(redirectTarget("https://www.apple.com@example.com/login")).toBe(
-      "chrome-extension://abcdefghijklmnop/blocked.html#https://www.apple.com@example.com/login",
+      `${WARNING_PAGE}#https://www.apple.com@example.com/login`,
     );
   });
 });

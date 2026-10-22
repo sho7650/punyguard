@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { maskPassword, parseBlockedUrl } from "./blocked-url.ts";
+import { WARNING_PAGE } from "./test-support/warning-page.ts";
 
 describe("parseBlockedUrl", () => {
   test("reads the original URL from the warning page's fragment", () => {
@@ -21,7 +22,7 @@ describe("parseBlockedUrl", () => {
     { name: "a javascript: URL", hash: "#javascript:alert(1)" },
     { name: "a data: URL", hash: "#data:text/html,<script>alert(1)</script>" },
     { name: "a file: URL", hash: "#file:///etc/passwd" },
-    { name: "a chrome-extension: URL", hash: "#chrome-extension://abcdefghijklmnop/blocked.html" },
+    { name: "a chrome-extension: URL", hash: `#${WARNING_PAGE}` },
   ] as const)("returns null for $name", ({ hash }) => {
     expect(parseBlockedUrl(hash)).toBeNull();
   });

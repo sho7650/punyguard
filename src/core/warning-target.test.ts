@@ -1,22 +1,19 @@
 import { describe, expect, test } from "vitest";
 import { DEFAULT_SETTINGS } from "./settings.ts";
 import { warningTarget } from "./warning-target.ts";
-
-const WARNING_PAGE = "chrome-extension://abcdefghijklmnop/blocked.html";
+import { WARNING_PAGE } from "./test-support/warning-page.ts";
 
 describe("warningTarget", () => {
   test("sends a page on an IDN host to the warning page with its URL in the fragment", () => {
     expect(
       warningTarget("https://xn--80a6aa68c8d.com/login?next=/", DEFAULT_SETTINGS, WARNING_PAGE),
-    ).toBe(
-      "chrome-extension://abcdefghijklmnop/blocked.html#https://xn--80a6aa68c8d.com/login?next=/",
-    );
+    ).toBe(`${WARNING_PAGE}#https://xn--80a6aa68c8d.com/login?next=/`);
   });
 
   test("masks the password and keeps the user name, like the block rules", () => {
     expect(
       warningTarget("https://paypal.com:secret@example.com/", DEFAULT_SETTINGS, WARNING_PAGE),
-    ).toBe("chrome-extension://abcdefghijklmnop/blocked.html#https://paypal.com:***@example.com/");
+    ).toBe(`${WARNING_PAGE}#https://paypal.com:***@example.com/`);
   });
 
   // The block rules only match http and https, so neither do these.
@@ -61,6 +58,6 @@ describe("warningTarget follows the settings", () => {
         { blockUserinfo: false, blockIpHosts: false, excludePrivateIps: true },
         WARNING_PAGE,
       ),
-    ).toBe("chrome-extension://abcdefghijklmnop/blocked.html#https://user@xn--80a6aa68c8d.com/");
+    ).toBe(`${WARNING_PAGE}#https://user@xn--80a6aa68c8d.com/`);
   });
 });

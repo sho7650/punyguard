@@ -6,8 +6,7 @@ import {
 } from "./redirect-tracking.ts";
 import { DEFAULT_SETTINGS } from "./settings.ts";
 import { createFakeStartStore } from "./test-support/fake-start-store.ts";
-
-const WARNING_PAGE = "chrome-extension://abcdefghijklmnop/blocked.html";
+import { WARNING_PAGE } from "./test-support/warning-page.ts";
 
 describe("redirectedFrameTarget", () => {
   test("sends a frame whose blocked navigation was redirected to a plain page to the warning page", () => {
@@ -20,14 +19,13 @@ describe("redirectedFrameTarget", () => {
         DEFAULT_SETTINGS,
         WARNING_PAGE,
       ),
-    ).toBe("chrome-extension://abcdefghijklmnop/blocked.html#https://paypal.com:***@evil.example/");
+    ).toBe(`${WARNING_PAGE}#https://paypal.com:***@evil.example/`);
   });
 
   test.each([
     {
       name: "the block rules already sent it to the warning page",
-      committed:
-        "chrome-extension://abcdefghijklmnop/blocked.html#https://paypal.com:***@evil.example/",
+      committed: `${WARNING_PAGE}#https://paypal.com:***@evil.example/`,
     },
     {
       name: "it committed at a blocked URL, which the content script handles",
@@ -77,7 +75,7 @@ describe("redirectedFrameTarget follows the settings", () => {
         { blockUserinfo: false, blockIpHosts: false, excludePrivateIps: true },
         WARNING_PAGE,
       ),
-    ).toBe("chrome-extension://abcdefghijklmnop/blocked.html#https://xn--80a6aa68c8d.com/");
+    ).toBe(`${WARNING_PAGE}#https://xn--80a6aa68c8d.com/`);
   });
 });
 
