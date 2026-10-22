@@ -33,3 +33,22 @@ The decisions that came with the template are in [template-decisions.md](templat
 
 - **Decision**: `web_accessible_resources` in `manifest.json` keeps `use_dynamic_url: false`.
 - **Why**: With a fixed URL, any page can tell that PunyGuard is installed by trying to load `chrome-extension://<ID>/blocked.html`. An attacker who learns that can only switch to a trick without `xn--` labels, user info or IP address hosts, and such tricks were outside what PunyGuard guards against to begin with. Knowing it is installed does not weaken the protection.
+
+## P5. Folders follow the concepts, and the coordinators sit at the top of `src/`
+
+- **Decision**: Each concept of CONTEXT.md has its own folder: `blocking/` (the block reasons and the block rules), `settings/`, `warning-page/`, `service-worker-navigation/` (ADR-0004) and `i18n/`. `blocking/`, `settings/` and `i18n/` are shared: the other folders may use them. The files that connect the parts, `background.entry.ts` and `protection.ts`, stay at the top of `src/`. Tests sit next to what they test, and the fakes they share are in `test-support/`. Source files may be moved or renamed freely, but the output names in `dist/` stay (`blocked.html`, `content.js` and so on): the users' history and their block rules hold the warning page's URL. `scripts/build.ts` maps each source to its output name.
+- **Why**: The code used to be split by technical part (`src/` for the entry points, `src/core/` for the rest), so reading one concept meant moving between folders; ADR-0004 alone was spread over five files. With a folder per concept, a reader can start from the folder named after the term in CONTEXT.md.
+- **Kept apart**: The block rules (`block-rules.ts`) and the URL check (`block-reasons.ts`) decide the same thing in two technologies, a regex for Chrome and a parsed URL, and stay two modules side by side in `blocking/`. A table with one entry per block reason was tried and dropped: decisions that cross the reasons (the priorities, the password rules, how strong the allow rules are) ended up in three files, and only the IDN entry could be read on its own. `block-rules-agreement.test.ts` checks that the two agree.
+
+## P6. File suffixes mark what touches the browser, and oxlint enforces the boundaries
+
+- **Decision**: A file that touches the browser at run time says so in its name: `*.entry.ts` for entry points, `*.chrome.ts` for wrappers of Chrome's APIs and `*.dom.ts` for DOM code. Every other file is pure. Coverage leaves out the three suffixes, and the E2E tests cover those files. `.oxlintrc.json` enforces three rules:
+  - R1: A pure file does not use `chrome`, `document` or `location` at run time (`no-restricted-globals` with `checkGlobalObject`, so `globalThis.chrome` counts too). `chrome.*` in a type position is allowed. It applies to tests and `test-support/` too.
+  - R2: A folder does not import a sibling folder other than the shared ones (`no-restricted-imports`, one override per group of folders). The coordinators at the top of `src/`, tests and `test-support/` are exempt: a fake has to import the folder it stands in for, which says nothing about the production boundaries.
+  - R3: Nothing imports an entry point. It is in the base `rules`, so it applies to every `.ts` file, `e2e/` and `scripts/` included.
+- **Why**: Nothing else told a reader which files need a browser to run, and the boundaries between folders (P5) would drift without a check. dependency-cruiser does not support TypeScript 7.
+- **Watch out**: When an override sets `no-restricted-imports`, its options replace those of the base rule instead of merging with them, and the same holds between two overrides that match the same file. So each R2 override repeats the R3 pattern. A new override that sets `no-restricted-imports` must do the same. The rules were checked on 2026-10-22 with trial files that break each of them.
+
+## Future goals
+
+- Make the words on the pages, the README and CONTEXT.md agree. They mix 「遮断」 with 「止める」 and 「遷移」 with 「移動」. This touches what users see, so it is left out of the 2026 restructuring (P5).
