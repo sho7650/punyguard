@@ -1,15 +1,15 @@
 // The two ends a whole-page navigation answered by a seeded Service Worker can reach with
 // PunyGuard installed: the warning page, or the attacker page that the settings let through.
 import { expect, type Page } from "@playwright/test";
-import { maskPassword } from "../../src/core/blocked-url.ts";
+import { maskPassword } from "../../src/blocking/password-mask.ts";
 import { ATTACKER_CONTENT, type BlockReason } from "./attacker-site.ts";
 import type { Extension } from "./extension.ts";
 import type { AttackerVisit, TestServer } from "./server.ts";
 
 // The section of the warning page that names each reason.
 const REASON_SECTIONS: Readonly<Record<BlockReason, string>> = {
-  idn: "#reason-idnHost",
-  ip: "#reason-ipHost",
+  idnHost: "#reason-idnHost",
+  ipHost: "#reason-ipHost",
   userinfo: "#reason-userinfo",
 };
 

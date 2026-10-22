@@ -81,7 +81,7 @@ test("the browser partitions Service Workers by the top-level site", async ({
   await withoutExtension(profileDir, server, async (context) => {
     const page = await context.newPage();
     const open = (url: (visit: AttackerVisit) => string): Promise<boolean> => {
-      const visit = server.attackerVisit("idn", "synthetic");
+      const visit = server.attackerVisit("idnHost", "synthetic");
       return controlledWhenOpened(page, server, visit, url(visit));
     };
 
@@ -105,7 +105,7 @@ test("with partitioning off, the top-level Service Worker controls the iframe to
     server,
     async (context) => {
       const page = await context.newPage();
-      const visit = server.attackerVisit("idn", "synthetic");
+      const visit = server.attackerVisit("idnHost", "synthetic");
       const url = server.iframeEmbeddingUrl(visit.url, "ip");
 
       expect(await controlledWhenOpened(page, server, visit, url)).toBe(true);
@@ -121,7 +121,7 @@ test("with partitioning off, the top-level Service Worker controls the iframe to
 //   2026-10-18 research with PunyGuard)
 // - user info in an iframe: Chrome refuses the document before any request
 //   (embedded-documents.spec.ts), so no Service Worker is even asked
-const COMBINATIONS = (["idn", "ip", "userinfo"] as const).flatMap((reason: BlockReason) =>
+const COMBINATIONS = (["idnHost", "ipHost", "userinfo"] as const).flatMap((reason: BlockReason) =>
   (["relay", "synthetic"] as const).flatMap((kind) =>
     PLACEMENTS.filter(
       (placement: Placement) =>
@@ -166,7 +166,7 @@ test.describe("with PunyGuard and no Service Worker, the paint count stays at ze
   for (const placement of PLACEMENTS) {
     test(placement, async ({ extension, server }) => {
       const page = await extension.context.newPage();
-      const visit = server.attackerVisit("idn", "none");
+      const visit = server.attackerVisit("idnHost", "none");
 
       const paints = await openTraced(page, server, visit, placement, async () => {
         const frame = await placementFrame(page, placement);

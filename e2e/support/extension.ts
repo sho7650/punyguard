@@ -4,8 +4,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium, expect, type BrowserContext, type Worker } from "@playwright/test";
-import { contentScriptRegistration } from "../../src/core/content-script.ts";
-import { DEFAULT_SETTINGS, loadSettings, type Settings } from "../../src/core/settings.ts";
+import { contentScriptRegistration } from "../../src/service-worker-navigation/settings-script.ts";
+import { DEFAULT_SETTINGS, loadSettings, type Settings } from "../../src/settings/settings.ts";
 import { BROWSER_ARGS } from "./browser-flags.ts";
 
 // The rules registered with the default settings: IDN hosts, userinfo and IP address hosts.
@@ -106,7 +106,7 @@ export async function saveRawSettings(
 }
 
 // The files of the registered content script, the first of which declares the settings
-// (src/core/content-script.ts)
+// (src/service-worker-navigation/settings-script.ts)
 export function registeredContentScriptFiles(
   worker: Worker,
 ): Promise<readonly string[] | undefined> {

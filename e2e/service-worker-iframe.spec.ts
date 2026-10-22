@@ -14,9 +14,9 @@ import { prepareExtensionWorker, WORKER_STATES } from "./support/extension-worke
 import { expect, test } from "./support/service-worker-fixtures.ts";
 
 // The warning page's section for each reason a Service Worker can answer in an iframe.
-const REASON_SECTIONS = { idn: "#reason-idnHost", ip: "#reason-ipHost" } as const;
+const REASON_SECTIONS = { idnHost: "#reason-idnHost", ipHost: "#reason-ipHost" } as const;
 
-const COMBINATIONS = (["idn", "ip"] as const).flatMap((reason) =>
+const COMBINATIONS = (["idnHost", "ipHost"] as const).flatMap((reason) =>
   (["relay", "synthetic"] as const).flatMap((kind) =>
     WORKER_STATES.map((state) => ({ reason, kind, state })),
   ),
@@ -45,7 +45,7 @@ test.describe("an iframe that a Service Worker answers shows the warning page in
       const frame = await placementFrame(page, "iframe");
       expect(frame.url()).toBe(`${extension.warningPageUrl}#${visit.url}`);
       await expect(frame.locator("#original-url")).toHaveText(visit.url);
-      // In an iframe the buttons would act on the embedding page's tab (blocked.ts).
+      // In an iframe the buttons would act on the embedding page's tab (warning-page.entry.ts).
       await expect(frame.locator("#details")).toBeVisible();
       await expect(frame.locator("#actions")).toBeHidden();
       await expect(page.locator("#outer")).toBeVisible();

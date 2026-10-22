@@ -1,6 +1,6 @@
 // The attacker's Service Worker holds a blocked navigation before it redirects, long enough for
 // Chrome to stop the extension's idle worker in between: it stopped after about 30 s idle, and a
-// redirect held 35 s or 60 s then stayed on the attacker page every time while background.ts
+// redirect held 35 s or 60 s then stayed on the attacker page every time while background.entry.ts
 // kept the starts in memory (2026-10-21). The worker must still send the frame to the warning
 // page once the redirect lands (requirements FR-9, AC-4). The test stops the worker itself
 // instead of waiting 30 s. The redirected page may run before it is replaced (AC-4), so this
@@ -17,14 +17,14 @@ import { expect, test } from "./support/service-worker-fixtures.ts";
 import { ATTACKER_USERINFO } from "./support/server.ts";
 
 const REASON_SECTIONS: Readonly<Record<BlockReason, string>> = {
-  idn: "#reason-idnHost",
-  ip: "#reason-ipHost",
+  idnHost: "#reason-idnHost",
+  ipHost: "#reason-ipHost",
   userinfo: "#reason-userinfo",
 };
 
 // Chrome refuses a URL with user info in an iframe before any request, so no Service Worker is
 // asked (service-worker-redirect.spec.ts).
-const COMBINATIONS = (["idn", "ip", "userinfo"] as const).flatMap((reason: BlockReason) =>
+const COMBINATIONS = (["idnHost", "ipHost", "userinfo"] as const).flatMap((reason: BlockReason) =>
   PLACEMENTS.filter((placement: Placement) => reason !== "userinfo" || placement === "top").map(
     (placement) => ({ reason, placement }),
   ),

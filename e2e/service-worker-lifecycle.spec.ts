@@ -9,7 +9,7 @@
 // (protection.spec.ts), so a relaunch here is a reinstall. A reinstall, an update and a reload
 // do drop the registration: a probe script that a test registered next to the extension's was
 // gone after 5 of 5 reloads, 5 of 5 updates and 5 of 5 relaunches (2026-10-20, Chromium 156).
-// Only the extension's own came back, registered again by onInstalled (src/background.ts)
+// Only the extension's own came back, registered again by onInstalled (src/background.entry.ts)
 // 70-83 ms after the reloaded worker started (5 runs). A navigation in that window shows the
 // attacker page (10 of 10 right after a reload and 10 of 10 as the first page of a relaunch), a
 // limit that the requirements and ADR-0004 document. So each test waits for the registration
@@ -17,8 +17,8 @@
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { contentScriptRegistration } from "../src/core/content-script.ts";
-import { DEFAULT_SETTINGS } from "../src/core/settings.ts";
+import { contentScriptRegistration } from "../src/service-worker-navigation/settings-script.ts";
+import { DEFAULT_SETTINGS } from "../src/settings/settings.ts";
 import { secureOriginArgs } from "./support/browser-flags.ts";
 import {
   DIST,

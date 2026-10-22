@@ -26,14 +26,14 @@ import { ATTACKER_USERINFO, type AttackerVisit, type TestServer } from "./suppor
 type RedirectKind = "redirectSameOrigin" | "redirectPlainHost";
 
 const REASON_SECTIONS: Readonly<Record<BlockReason, string>> = {
-  idn: "#reason-idnHost",
-  ip: "#reason-ipHost",
+  idnHost: "#reason-idnHost",
+  ipHost: "#reason-ipHost",
   userinfo: "#reason-userinfo",
 };
 
 // Chrome refuses a URL with user info in an iframe before any request, so no Service Worker is
 // asked (embedded-documents.spec.ts; service-worker-profile.ts registers none there).
-const COMBINATIONS = (["idn", "ip", "userinfo"] as const).flatMap((reason: BlockReason) =>
+const COMBINATIONS = (["idnHost", "ipHost", "userinfo"] as const).flatMap((reason: BlockReason) =>
   (["redirectSameOrigin", "redirectPlainHost"] as const).flatMap((kind: RedirectKind) =>
     PLACEMENTS.filter(
       (placement: Placement) => reason !== "userinfo" || placement === "top",
@@ -50,7 +50,7 @@ const COMBINATIONS = (["idn", "ip", "userinfo"] as const).flatMap((reason: Block
 
 // redirectSameOrigin lands on its scope's landing page (attacker-site.ts) on the origin without
 // user info. For an IDN or IP address host the landing is blocked as well, so the content script
-// moves it with its own URL, while the webNavigation fallback in background.ts would use the URL
+// moves it with its own URL, while the webNavigation fallback in background.entry.ts would use the URL
 // the navigation started at: the landing URL in the warning page shows the content script moved
 // it. Any other landing is not blocked, and the fallback moves it with the start, its password
 // masked.
