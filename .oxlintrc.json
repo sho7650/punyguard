@@ -11,6 +11,19 @@
     "typeAware": true,
     "typeCheck": false
   },
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["*.entry.ts"],
+            "message": "An entry point runs on load; nothing imports it (docs/decisions.md P6, R3)."
+          }
+        ]
+      }
+    ]
+  },
   "overrides": [
     {
       "files": ["src/**/*.test.ts"],
@@ -20,6 +33,99 @@
       "files": ["e2e/**/*.ts"],
       "rules": {
         "typescript/prefer-readonly-parameter-types": "off"
+      }
+    },
+    {
+      "files": ["src/**/*.ts"],
+      "excludeFiles": ["**/*.entry.ts", "**/*.chrome.ts", "**/*.dom.ts"],
+      "rules": {
+        "no-restricted-globals": [
+          "error",
+          {
+            "globals": [
+              {
+                "name": "chrome",
+                "message": "Only *.entry.ts, *.chrome.ts and *.dom.ts touch the browser at run time (docs/decisions.md P6, R1)."
+              },
+              {
+                "name": "document",
+                "message": "Only *.entry.ts, *.chrome.ts and *.dom.ts touch the browser at run time (docs/decisions.md P6, R1)."
+              },
+              {
+                "name": "location",
+                "message": "Only *.entry.ts, *.chrome.ts and *.dom.ts touch the browser at run time (docs/decisions.md P6, R1)."
+              }
+            ],
+            "checkGlobalObject": true
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/blocking/**/*.ts", "src/settings/**/*.ts", "src/i18n/**/*.ts"],
+      "excludeFiles": ["**/*.test.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/warning-page/**",
+                  "**/service-worker-navigation/**",
+                  "**/test-support/**"
+                ],
+                "message": "A folder imports only the shared folders blocking/, settings/ and i18n/ (docs/decisions.md P6, R2)."
+              },
+              {
+                "group": ["*.entry.ts"],
+                "message": "An entry point runs on load; nothing imports it (docs/decisions.md P6, R3)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/warning-page/**/*.ts"],
+      "excludeFiles": ["**/*.test.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/service-worker-navigation/**", "**/test-support/**"],
+                "message": "A folder imports only the shared folders blocking/, settings/ and i18n/ (docs/decisions.md P6, R2)."
+              },
+              {
+                "group": ["*.entry.ts"],
+                "message": "An entry point runs on load; nothing imports it (docs/decisions.md P6, R3)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/service-worker-navigation/**/*.ts"],
+      "excludeFiles": ["**/*.test.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/warning-page/**", "**/test-support/**"],
+                "message": "A folder imports only the shared folders blocking/, settings/ and i18n/ (docs/decisions.md P6, R2)."
+              },
+              {
+                "group": ["*.entry.ts"],
+                "message": "An entry point runs on load; nothing imports it (docs/decisions.md P6, R3)."
+              }
+            ]
+          }
+        ]
       }
     }
   ],
