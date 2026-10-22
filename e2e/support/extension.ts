@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium, expect, type BrowserContext, type Worker } from "@playwright/test";
-import { contentScriptRegistration } from "../../src/service-worker-navigation/content-script.ts";
+import { contentScriptRegistration } from "../../src/service-worker-navigation/settings-script.ts";
 import { DEFAULT_SETTINGS, loadSettings, type Settings } from "../../src/settings/settings.ts";
 import { BROWSER_ARGS } from "./browser-flags.ts";
 
@@ -106,7 +106,7 @@ export async function saveRawSettings(
 }
 
 // The files of the registered content script, the first of which declares the settings
-// (src/service-worker-navigation/content-script.ts)
+// (src/service-worker-navigation/settings-script.ts)
 export function registeredContentScriptFiles(
   worker: Worker,
 ): Promise<readonly string[] | undefined> {

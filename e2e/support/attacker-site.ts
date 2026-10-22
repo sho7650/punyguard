@@ -2,8 +2,8 @@
 // navigations with, and the pages that register them. server.ts serves these on every host, so
 // one origin per block reason holds a Service Worker of each kind, each under its own scope.
 
-/** The block reason a blocked URL has; one host per reason (server.ts). */
-export type BlockReason = "idn" | "ip" | "userinfo";
+// The block reason a blocked URL has; one host per reason (server.ts).
+export type { BlockReason } from "../../src/blocking/block-reasons.ts";
 
 /**
  * How the Service Worker answers a navigation in its scope:

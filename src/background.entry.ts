@@ -7,7 +7,7 @@ import {
   type FrameUrl,
   redirectedFrameTarget,
 } from "./service-worker-navigation/redirect-tracking.ts";
-import { loadSavedSettings, onSettingsChanged } from "./settings/settings-storage.ts";
+import { loadSavedSettings, onSettingsChanged } from "./settings/settings-storage.chrome.ts";
 
 const WARNING_PAGE_URL = chrome.runtime.getURL("blocked.html");
 

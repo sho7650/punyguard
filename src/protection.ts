@@ -1,5 +1,5 @@
-import { BLOCK_RULE_IDS, buildBlockRules } from "./blocking/block-rule.ts";
-import { contentScriptRegistration } from "./service-worker-navigation/content-script.ts";
+import { BLOCK_RULE_IDS, buildBlockRules } from "./blocking/block-rules.ts";
+import { contentScriptRegistration } from "./service-worker-navigation/settings-script.ts";
 import type { Settings } from "./settings/settings.ts";
 
 // Every message key ensureProtection looks up; src/i18n/locales.test.ts checks that both catalogs

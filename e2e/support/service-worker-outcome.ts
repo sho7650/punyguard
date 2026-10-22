@@ -8,8 +8,8 @@ import type { AttackerVisit, TestServer } from "./server.ts";
 
 // The section of the warning page that names each reason.
 const REASON_SECTIONS: Readonly<Record<BlockReason, string>> = {
-  idn: "#reason-idnHost",
-  ip: "#reason-ipHost",
+  idnHost: "#reason-idnHost",
+  ipHost: "#reason-ipHost",
   userinfo: "#reason-userinfo",
 };
 

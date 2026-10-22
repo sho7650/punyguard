@@ -14,16 +14,14 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      // Thin entry points and adapters that touch browser APIs; covered by the E2E tests
+      // Entry points (*.entry.ts) and the files that wrap Chrome's APIs (*.chrome.ts) or touch the
+      // DOM (*.dom.ts) are thin; the E2E tests cover them
       exclude: [
         "src/**/*.test.ts",
         "src/**/test-support/**",
-        "src/background.ts",
-        "src/warning-page/blocked.ts",
-        "src/service-worker-navigation/content.ts",
-        "src/settings/options.ts",
-        "src/i18n/localize.ts",
-        "src/settings/settings-storage.ts",
+        "src/**/*.entry.ts",
+        "src/**/*.chrome.ts",
+        "src/**/*.dom.ts",
       ],
       // Enforced from day one to keep tests first (D9)
       thresholds: {

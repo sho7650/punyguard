@@ -1,6 +1,6 @@
 // The block rules as Chrome holds them, the toolbar badge and tooltip, and blocking across
 // restarts.
-import { buildBlockRules } from "../src/blocking/block-rule.ts";
+import { buildBlockRules } from "../src/blocking/block-rules.ts";
 import { expect, test } from "./support/fixtures.ts";
 import {
   dynamicRules,

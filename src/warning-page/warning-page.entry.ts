@@ -5,13 +5,13 @@ import { findBlockReasons, type BlockReason } from "../blocking/block-reasons.ts
 import { maskPassword } from "../blocking/password-mask.ts";
 import { parseBlockedUrl } from "./blocked-url.ts";
 import { describeHost, type HostCharacter } from "./host-description.ts";
-import { localize } from "../i18n/localize.ts";
-import { loadSavedSettings } from "../settings/settings-storage.ts";
+import { localize } from "../i18n/localize.dom.ts";
+import { loadSavedSettings } from "../settings/settings-storage.chrome.ts";
 
 function requireElement<T extends HTMLElement>(id: string, type: new () => T): T {
   const element = document.querySelector(`#${id}`);
-  // Only narrows the type: blocked.html ships with this script, so a missing element is a
-  // build mistake, not something that happens at run time.
+  // Only narrows the type: warning-page.html ships with this script (as blocked.html), so a
+  // missing element is a build mistake, not something that happens at run time.
   if (!(element instanceof type)) {
     throw new TypeError(`blocked.html has no <${type.name}> with id "${id}"`);
   }

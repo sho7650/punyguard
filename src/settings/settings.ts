@@ -1,7 +1,7 @@
 // What the user can loosen on the options page, one on/off switch each. IDN hosts are always
 // blocked (ADR-0001), so they have no setting. The names are the keys saved in storage
 // (ADR-0005) and the ids of the checkboxes in options.html. The order is the order of the
-// digits in the settings script names (content-script.ts).
+// digits in the settings script names (settings-script.ts).
 export const SETTING_NAMES = ["blockUserinfo", "blockIpHosts", "excludePrivateIps"] as const;
 
 export type SettingName = (typeof SETTING_NAMES)[number];

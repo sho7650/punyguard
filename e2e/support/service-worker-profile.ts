@@ -16,8 +16,8 @@ import type { TestServer } from "./server.ts";
 
 // Chrome refuses a URL with user info in an iframe before any request (embedded-documents.spec.ts),
 // so only these reasons get a Service Worker registered inside an iframe.
-const IFRAME_REASONS: readonly BlockReason[] = ["idn", "ip"];
-const ALL_REASONS: readonly BlockReason[] = ["idn", "ip", "userinfo"];
+const IFRAME_REASONS: readonly BlockReason[] = ["idnHost", "ipHost"];
+const ALL_REASONS: readonly BlockReason[] = ["idnHost", "ipHost", "userinfo"];
 
 /** Chromium without PunyGuard, with the Service Worker origins treated as secure. */
 export function launchWithoutExtension(

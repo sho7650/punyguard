@@ -1,7 +1,7 @@
 // The options page. Each change is saved at once; there is no save button.
 import { SETTING_NAMES, type SettingName, type Settings, settingsFrom } from "./settings.ts";
-import { localize } from "../i18n/localize.ts";
-import { loadSavedSettings, onSettingsChanged, saveSettings } from "./settings-storage.ts";
+import { localize } from "../i18n/localize.dom.ts";
+import { loadSavedSettings, onSettingsChanged, saveSettings } from "./settings-storage.chrome.ts";
 
 function checkbox(name: SettingName): HTMLInputElement {
   const element = document.querySelector(`#${name}`);

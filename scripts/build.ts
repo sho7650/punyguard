@@ -5,16 +5,18 @@ import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import * as esbuild from "esbuild";
 import packageJson from "../package.json" with { type: "json" };
-import { settingsScripts } from "../src/service-worker-navigation/content-script.ts";
+import { settingsScripts } from "../src/service-worker-navigation/settings-script.ts";
 
 const OUT_DIR = "dist";
 
-// The output name of each bundled script, which manifest.json and the pages refer to
+// The output name of each bundled script, which manifest.json and the pages refer to. The
+// output names stay as they are when the sources move or are renamed: the warning page's URL
+// (blocked.html) is in the users' browser history and in the redirects of their block rules.
 const ENTRY_POINTS: Readonly<Record<string, string>> = {
-  background: "src/background.ts",
-  blocked: "src/warning-page/blocked.ts",
-  content: "src/service-worker-navigation/content.ts",
-  options: "src/settings/options.ts",
+  background: "src/background.entry.ts",
+  blocked: "src/warning-page/warning-page.entry.ts",
+  content: "src/service-worker-navigation/content.entry.ts",
+  options: "src/settings/options.entry.ts",
 };
 
 interface StaticFile {
@@ -37,11 +39,12 @@ function dependencyLicenses(): StaticFile[] {
   });
 }
 
-// Files that are not bundled and are copied into dist/ as they are.
+// Files that are not bundled and are copied into dist/ as they are, under the fixed output
+// names (ENTRY_POINTS).
 const STATIC_FILES: readonly StaticFile[] = [
   { from: "manifest.json", to: "manifest.json" },
-  { from: "src/warning-page/blocked.html", to: "blocked.html" },
-  { from: "src/warning-page/blocked.css", to: "blocked.css" },
+  { from: "src/warning-page/warning-page.html", to: "blocked.html" },
+  { from: "src/warning-page/warning-page.css", to: "blocked.css" },
   { from: "src/settings/options.html", to: "options.html" },
   { from: "src/settings/options.css", to: "options.css" },
   { from: "_locales", to: "_locales" },
@@ -101,7 +104,7 @@ function watchStaticFile(file: StaticFile, onChange: () => void): void {
 }
 
 // The scripts that hand the content script its settings, one per combination of settings
-// (src/service-worker-navigation/content-script.ts). They only change with the source, so watch
+// (src/service-worker-navigation/settings-script.ts). They only change with the source, so watch
 // mode writes them once.
 async function writeSettingsScripts(): Promise<void> {
   await Promise.all(

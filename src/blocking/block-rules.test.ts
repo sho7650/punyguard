@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildBlockRules } from "./block-rule.ts";
+import { buildBlockRules } from "./block-rules.ts";
 import { DEFAULT_SETTINGS } from "../settings/settings.ts";
 import { redirectTarget } from "../test-support/redirect-target.ts";
 import { WARNING_PAGE } from "../test-support/warning-page.ts";

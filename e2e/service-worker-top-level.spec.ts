@@ -15,10 +15,10 @@ import { expect, test } from "./support/service-worker-fixtures.ts";
 
 const KINDS = ["relay", "synthetic"] as const;
 
-// The warning page's section for each block reason (blocked.html)
+// The warning page's section for each block reason (warning-page.html)
 const REASON_SECTIONS: Readonly<Record<BlockReason, string>> = {
-  idn: "#reason-idnHost",
-  ip: "#reason-ipHost",
+  idnHost: "#reason-idnHost",
+  ipHost: "#reason-ipHost",
   userinfo: "#reason-userinfo",
 };
 
@@ -29,7 +29,7 @@ const CHROME_ERROR_PAGE_URL = "chrome-error://chromewebdata/";
 
 // Every reason with every kind and worker state, except user info with the relay, which Chrome
 // refuses itself (below).
-const COMBINATIONS = (["idn", "ip", "userinfo"] as const).flatMap((reason: BlockReason) =>
+const COMBINATIONS = (["idnHost", "ipHost", "userinfo"] as const).flatMap((reason: BlockReason) =>
   KINDS.filter((kind) => reason !== "userinfo" || kind !== "relay").flatMap((kind) =>
     WORKER_STATES.map((worker) => ({ reason, kind, worker })),
   ),

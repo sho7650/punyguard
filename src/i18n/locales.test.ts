@@ -21,12 +21,12 @@ function pageKeys(page: string): string[] {
   );
 }
 
-const blockedPageKeys = pageKeys("../warning-page/blocked.html");
+const warningPageKeys = pageKeys("../warning-page/warning-page.html");
 const optionsPageKeys = pageKeys("../settings/options.html");
 
 const usedKeys = [
   ...PROTECTION_MESSAGE_KEYS,
-  ...blockedPageKeys,
+  ...warningPageKeys,
   ...optionsPageKeys,
   ...SCRIPT_NAMES.map((name) => `script${name}`),
 ];
@@ -36,7 +36,7 @@ test("the Japanese and English messages define the same keys", () => {
 });
 
 test("the warning page and the options page use data-i18n keys", () => {
-  expect(blockedPageKeys).toContain("headingUserinfo");
+  expect(warningPageKeys).toContain("headingUserinfo");
   expect(optionsPageKeys).toContain("optionBlockIpHosts");
 });
 

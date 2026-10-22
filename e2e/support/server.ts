@@ -128,8 +128,8 @@ function embeddedUrl(target: EmbedTarget, port: number): string {
 // The origin of each block reason's attacker URLs, with the user info they are opened with.
 function attackerOrigin(reason: BlockReason, port: number, withUserinfo: boolean): string {
   const hosts: Readonly<Record<BlockReason, string>> = {
-    idn: IDN_HOST,
-    ip: "127.0.0.1",
+    idnHost: IDN_HOST,
+    ipHost: "127.0.0.1",
     userinfo: withUserinfo ? `${ATTACKER_USERINFO}@${USERINFO_HOST}` : USERINFO_HOST,
   };
   return `http://${hosts[reason]}:${port}`;

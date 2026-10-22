@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { createContext, runInContext } from "node:vm";
 import { describe, expect, test } from "vitest";
-import { contentScriptRegistration, declaredSettings, settingsScripts } from "./content-script.ts";
+import { contentScriptRegistration, declaredSettings, settingsScripts } from "./settings-script.ts";
 import { DEFAULT_SETTINGS, type Settings } from "../settings/settings.ts";
 
 const everySettings: readonly Settings[] = [false, true].flatMap((blockUserinfo) =>

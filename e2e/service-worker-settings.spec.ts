@@ -1,7 +1,7 @@
 // The settings apply to navigations a Service Worker answers as they do to the others: a
 // loosened reason lets the Service Worker's page through, and every change applies from the
 // very next navigation, both ways (requirements FR-4, FR-5, V-3).
-import { buildBlockRules } from "../src/blocking/block-rule.ts";
+import { buildBlockRules } from "../src/blocking/block-rules.ts";
 import { DEFAULT_SETTINGS, type Settings } from "../src/settings/settings.ts";
 import type { BlockReason } from "./support/attacker-site.ts";
 import { saveSettings, type Extension } from "./support/extension.ts";
@@ -36,12 +36,12 @@ const LOOSENINGS: readonly {
   {
     name: "IP address host blocking off",
     settings: { ...DEFAULT_SETTINGS, blockIpHosts: false },
-    reason: "ip",
+    reason: "ipHost",
   },
   {
     name: "private IP addresses excluded",
     settings: { ...DEFAULT_SETTINGS, excludePrivateIps: true },
-    reason: "ip",
+    reason: "ipHost",
   },
 ];
 
@@ -75,9 +75,9 @@ test("with every setting loosened, a Service Worker's page on an IDN host is blo
 }) => {
   await save(extension, { blockUserinfo: false, blockIpHosts: false, excludePrivateIps: true });
   const page = await extension.context.newPage();
-  const visit = server.attackerVisit("idn", "synthetic");
+  const visit = server.attackerVisit("idnHost", "synthetic");
 
   await openVisit(page, visit);
 
-  await expectWarningPage(page, extension, server, visit, "idn");
+  await expectWarningPage(page, extension, server, visit, "idnHost");
 });
