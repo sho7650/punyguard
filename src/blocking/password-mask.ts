@@ -1,6 +1,3 @@
-// The block rules only redirect http and https URLs.
-export const BLOCKED_PROTOCOLS: ReadonlySet<string> = new Set(["http:", "https:"]);
-
 export const MASKED_PASSWORD = "***";
 
 // The block rules mask the password before the redirect (block-rules.ts), but anyone can open

@@ -1,6 +1,9 @@
 import { isIpAddressHost, isPrivateIpAddress } from "./ip-address.ts";
 import type { Settings } from "../settings/settings.ts";
 
+// The block rules only redirect http and https URLs.
+export const BLOCKED_PROTOCOLS: ReadonlySet<string> = new Set(["http:", "https:"]);
+
 // The grounds the warning page explains (CONTEXT.md "遮断理由"), in the order it shows them.
 export type BlockReason = "idnHost" | "userinfo" | "ipHost";
 
@@ -31,4 +34,13 @@ export function findBlockReasons(url: UrlParts, settings: Settings): readonly Bl
     ...(settings.blockUserinfo && hasUserinfo(url) ? (["userinfo"] as const) : []),
     ...(isBlockedIpHost(url.hostname, settings) ? (["ipHost"] as const) : []),
   ];
+}
+
+// Whether the settings block this URL, like the block rules do: only http and https URLs.
+// href is document.URL or a webNavigation URL, both already parsed by Chrome, so it always
+// parses. The content script only sees http and https pages, but webNavigation also reports
+// file:, data:, about: and chrome-extension: URLs, and a file: URL can have an IP or IDN host.
+export function meetsBlockReason(href: string, settings: Settings): boolean {
+  const url = new URL(href);
+  return BLOCKED_PROTOCOLS.has(url.protocol) && findBlockReasons(url, settings).length > 0;
 }
