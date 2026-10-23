@@ -49,6 +49,17 @@ The decisions that came with the template are in [template-decisions.md](templat
 - **Why**: Nothing else told a reader which files need a browser to run, and the boundaries between folders (P5) would drift without a check. dependency-cruiser does not support TypeScript 7.
 - **Watch out**: When an override sets `no-restricted-imports`, its options replace those of the base rule instead of merging with them, and the same holds between two overrides that match the same file. So each R2 override repeats the R3 pattern. A new override that sets `no-restricted-imports` must do the same. The rules were checked on 2026-10-22 with trial files that break each of them.
 
+## P7. Filling `storage.session` to get past the redirect check is accepted
+
+- **Decision**: The navigation starts kept in `chrome.storage.session` (ADR-0004) have no size limit, no count limit, and no shortening of the URL. A page that fills the storage can stop a later Service Worker redirect from going to the warning page. This is accepted, and the README does not list it, as with P4.
+- **What it takes**: A start is kept for each blocked URL a frame starts to navigate to, until the frame's next navigation starts or the tab closes. Once the storage is full, the next start cannot be written and its redirect is not followed. The attacker needs the user to keep their page open, iframes on it that navigate to blocked URLs with long paths until the storage is full, and a Service Worker registered on another host that answers with a redirect.
+- **Measured** (2026-10-23, headless Chromium, the extension's worker running). This shows that the mechanism works, not that an attacker would use it:
+  - An iframe that navigates to a blocked URL leaves a start under the original URL, before DNR redirects it (2 of 2). The start stays after the iframe is removed (2 of 2).
+  - 19 starts with a 512 KB path fit. The 20th `set` failed with `Session storage quota bytes exceeded`.
+  - After 31 starts of shrinking size left 48 bytes free, a Service Worker redirect went to the warning page 0 of 5 times (the positive control 5 of 5), in both of two runs. Large starts alone left about 1 MB free, and every redirect still went to the warning page.
+- **Why**: The same reason as P4. An attacker who knows PunyGuard and how it works can switch to a trick without `xn--` labels, user info or IP address hosts, which costs less than this attack. The attack also needs the user to stay on the attacker's page while it fills the storage, and a Service Worker on another host. The page it gets through to is on an ordinary host, and the address bar shows that host.
+- **Revisit when**: PunyGuard has enough users that attackers start targeting it.
+
 ## Future goals
 
 - Make the words on the pages, the README and CONTEXT.md agree. They mix 「遮断」 with 「止める」 and 「遷移」 with 「移動」. This touches what users see, so it is left out of the 2026 restructuring (P5).
