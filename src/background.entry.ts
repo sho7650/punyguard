@@ -77,7 +77,7 @@ const navigationStarts = createStartTracker({
 // The settings are read here, after the page has committed: the redirected page may already
 // have run (a known limit), and what matters is that it ends on the warning page.
 async function moveRedirectedFrame(
-  { tabId, frameId, url }: FrameUrl,
+  { tabId, documentId, url }: FrameUrl & { readonly documentId: string },
   start: string,
 ): Promise<void> {
   const settings = await loadSavedSettings();
@@ -85,9 +85,12 @@ async function moveRedirectedFrame(
   if (target === null) {
     return;
   }
-  // replace() takes the redirected page's place in the tab's history.
+  // replace() takes the redirected page's place in the tab's history. The target is the
+  // committed document, not the frame: the user may have moved the frame on to another page
+  // while the settings loaded, and that page must not be replaced. executeScript then fails
+  // with no document to run in (measured 2026-10-23).
   await chrome.scripting.executeScript({
-    target: { tabId, frameIds: [frameId] },
+    target: { tabId, documentIds: [documentId] },
     injectImmediately: true,
     func: (warningPage: string) => {
       location.replace(warningPage);
