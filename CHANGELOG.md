@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/sho7650/punyguard/compare/v0.4.1...v0.4.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* treat the unspecified address :: as a private IP address ([e089e4b](https://github.com/sho7650/punyguard/commit/e089e4bc384a8f9db65d9ad5fe4c4a3ab5cfa015))
+
 ## [0.4.1](https://github.com/sho7650/punyguard/compare/v0.4.0...v0.4.1) (2026-10-23)
 
 
