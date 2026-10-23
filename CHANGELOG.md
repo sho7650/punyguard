@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/sho7650/punyguard/compare/v0.4.0...v0.4.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* send the committed document, not the frame, to the warning page ([31315e1](https://github.com/sho7650/punyguard/commit/31315e124d5c06bdb824c6cda7edd1e6cbefaa03))
+* send the committed document, not the frame, to the warning page ([204d5ed](https://github.com/sho7650/punyguard/commit/204d5ede20acdb72783c4bc168e5031dd000412a))
+
 ## [0.4.0](https://github.com/sho7650/punyguard/compare/v0.3.0...v0.4.0) (2026-10-21)
 
 
