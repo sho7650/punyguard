@@ -1,4 +1,4 @@
-import { BLOCKED_PROTOCOLS } from "../blocking/password-mask.ts";
+import { BLOCKED_PROTOCOLS } from "../blocking/block-reasons.ts";
 
 // Reads the original URL from the warning page's fragment. Any page can open the warning
 // page with a fragment of its choice, so the content is untrusted: the block rules only put

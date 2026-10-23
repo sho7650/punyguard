@@ -192,6 +192,15 @@ test.describe("with private IP addresses excluded", () => {
 
     expect(response?.url() ?? page.url()).not.toContain(extension.warningPageUrl);
   });
+
+  test("the unspecified address is excluded too", async ({ extension, server }) => {
+    const page = await extension.context.newPage();
+    // The default settings send http://[::]/ to the warning page (checked 2026-10-23). The test
+    // server does not listen on IPv6, so only the absence of the redirect is checked.
+    const response = await page.goto(`http://[::]:${server.port}/`).catch(() => null);
+
+    expect(response?.url() ?? page.url()).not.toContain(extension.warningPageUrl);
+  });
 });
 
 test.describe("with private IP addresses excluded, URLs with user info", () => {

@@ -12,7 +12,9 @@ export const IPV6_PATTERN = String.raw`\[[0-9a-f:]+\]`;
 // always four decimal parts.
 const REST = "[0-9.]+";
 
-// Addresses with no route on the internet (CONTEXT.md "プライベート IP アドレス").
+// Addresses that point to the user's device or into the user's network (CONTEXT.md
+// "プライベートIPアドレス"). Documentation and benchmarking ranges have no route on the
+// internet either, but point nowhere in the user's network, so they are left out.
 const PRIVATE_IPV4_RANGES = [
   // 0.0.0.0/8
   String.raw`0`,
@@ -35,9 +37,10 @@ const PRIVATE_IPV4_RANGES = [
 // Grouped, so that the alternatives stay inside whatever pattern they are put in.
 export const PRIVATE_IPV4_PATTERN = `(?:${PRIVATE_IPV4_RANGES})`;
 
-// IPv6 counterparts: loopback, unique local (fc00::/7) and link-local (fe80::/10). Past the
-// first group, a canonical address needs no exact shape either.
+// IPv6 counterparts: unspecified, loopback, unique local (fc00::/7) and link-local (fe80::/10).
+// Past the first group, a canonical address needs no exact shape either.
 const PRIVATE_IPV6_GROUPS = [
+  "::",
   "::1",
   "f[cd][0-9a-f][0-9a-f]:[0-9a-f:]*",
   "fe[89ab][0-9a-f]:[0-9a-f:]*",
