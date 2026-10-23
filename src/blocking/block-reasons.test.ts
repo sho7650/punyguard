@@ -48,6 +48,13 @@ describe("findBlockReasons leaves out what the settings turn off", () => {
     },
   );
 
+  test.each([
+    { url: "http://[::]/", expected: [] },
+    { url: "http://[::2]/", expected: ["ipHost"] },
+  ] as const)("gives $url $expected while private addresses are excluded", ({ url, expected }) => {
+    expect(reasons(url, { ...DEFAULT_SETTINGS, excludePrivateIps: true })).toEqual(expected);
+  });
+
   test("keeps a public address while private addresses are excluded", () => {
     expect(
       reasons("http://[::ffff:cb00:7105]/", { ...DEFAULT_SETTINGS, excludePrivateIps: true }),

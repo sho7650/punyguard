@@ -55,7 +55,7 @@ Click the PunyGuard icon in the toolbar to open the settings (or **Extension opt
 | Block IP address hosts      | On      |
 | Except private IP addresses | Off     |
 
-- Private IP addresses are those with no route on the internet: `0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10`, `127.0.0.0/8`, `169.254.0.0/16`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`, `fc00::/7`, `fe80::/10`, and the IPv4-mapped IPv6 forms of those IPv4 ranges.
+- Private IP addresses are those that point to your own device or into your network: `0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10`, `127.0.0.0/8`, `169.254.0.0/16`, `172.16.0.0/12`, `192.168.0.0/16`, `::`, `::1`, `fc00::/7`, `fe80::/10`, and the IPv4-mapped IPv6 forms of those IPv4 ranges.
 - Even when they are excluded, a URL with user info such as `http://admin@192.168.0.1/` is still blocked as a URL with user info.
 - Turning off **Block URLs with user info** does not let an embedded document (iframe, `<object>`, `<embed>`) with user info load, because Chrome itself refuses it, unless the page itself was opened with the same user info on the same origin (same scheme, host and port).
 - IDN host blocking has no setting.
