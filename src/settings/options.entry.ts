@@ -35,22 +35,42 @@ function showSaveFailed(failed: boolean): void {
   message.hidden = !failed;
 }
 
+// Every save makes this tab reload too, and the user can change another setting before that
+// reload ends. A reload that a later save or reload has overtaken is not shown, because the next
+// change saves the whole form and would undo the user's change. A save shows #save-failed and
+// rolls back only while it is the latest save: its own reload would otherwise overtake every save.
+let latestFormOperation = 0;
+let latestSave = 0;
+
 async function refresh(): Promise<void> {
-  showSettings(await loadSavedSettings());
+  latestFormOperation += 1;
+  const thisOperation = latestFormOperation;
+  const settings = await loadSavedSettings();
+  if (thisOperation === latestFormOperation) {
+    showSettings(settings);
+  }
 }
 
 // A failed save puts the form back to what is actually saved, so it never shows a setting that
 // is not in effect.
 async function save(): Promise<void> {
+  latestFormOperation += 1;
+  latestSave += 1;
+  const thisSave = latestSave;
   const settings = readForm();
   showSettings(settings);
   try {
     await saveSettings(settings);
-    showSaveFailed(false);
+    if (thisSave === latestSave) {
+      showSaveFailed(false);
+    }
   } catch (error) {
     console.error("Failed to save the settings", error);
-    showSaveFailed(true);
-    await refresh();
+    // A later save writes the whole form, this change included, so its result stands instead.
+    if (thisSave === latestSave) {
+      showSaveFailed(true);
+      await refresh();
+    }
   }
 }
 
