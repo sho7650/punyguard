@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.3](https://github.com/sho7650/punyguard/compare/v0.4.2...v0.4.3) (2026-10-25)
+
+
+### Bug Fixes
+
+* drop stale settings loads on the options page ([8ce386d](https://github.com/sho7650/punyguard/commit/8ce386d7087beb7cc7be52dbef2e7780e7a36ea6))
+* drop stale settings loads on the options page ([843547f](https://github.com/sho7650/punyguard/commit/843547f5272849bb0620275eeb7e817ed4bd8bb8))
+
 ## [0.4.2](https://github.com/sho7650/punyguard/compare/v0.4.1...v0.4.2) (2026-10-23)
 
 
